@@ -1,0 +1,79 @@
+# Reality Engine — Monitored Sources
+# Copy and customize for your niche.
+#
+# Location: ~/.reality-engine/instances/<slug>/sources.yaml
+#
+# Source types: rss, news_rss, reddit_rss, api, scrape, page_monitor, alert
+# Frequency: 2h, 4h, 6h, 12h, daily, weekly
+
+rss_feeds:
+  competitor_blogs:
+    - name: "Competitor A Blog"
+      url: "https://competitor-a.com/blog/feed/"
+      frequency: "6h"
+      category: "Competitor Moves"
+    - name: "Competitor B Blog"
+      url: "https://competitor-b.com/blog/feed/"
+      frequency: "6h"
+      category: "Competitor Moves"
+
+  industry_blogs:
+    - name: "Industry Publication"
+      url: "https://industry-pub.com/feed/"
+      frequency: "4h"
+      category: "Industry News"
+    - name: "Niche Blog"
+      url: "https://niche-blog.com/feed"
+      frequency: "daily"
+      category: "Industry News"
+
+  regulatory:
+    - name: "Regulatory Body Updates"
+      url: "https://regulator.gov/feeds/updates.xml"
+      frequency: "daily"
+      category: "Legal & Regulatory"
+
+# Google News RSS keyword streams
+# Format: https://news.google.com/rss/search?q=ENCODED_QUERY&hl=en-US&gl=US&ceid=US:en
+google_news_rss:
+  - name: "Industry Keyword Stream"
+    url: 'https://news.google.com/rss/search?q=%22your+industry+keyword%22&hl=en-US&gl=US&ceid=US:en'
+    frequency: "4h"
+    category: "Industry News"
+  - name: "Regulatory Keyword Stream"
+    url: 'https://news.google.com/rss/search?q=%22your+regulation+keyword%22+law+OR+enforcement&hl=en-US&gl=US&ceid=US:en'
+    frequency: "4h"
+    category: "Legal & Regulatory"
+
+# Reddit search feeds for community monitoring
+reddit_feeds:
+  - name: "r/YourIndustry"
+    url: "https://www.reddit.com/r/yourindustry/search/.rss?q=relevant+keyword&sort=new&restrict_sr=on"
+    frequency: "12h"
+    category: "Audience Question / Pain Point"
+  - name: "r/smallbusiness - Your Topic"
+    url: "https://www.reddit.com/r/smallbusiness/search/.rss?q=your+topic&sort=new&restrict_sr=on"
+    frequency: "12h"
+    category: "Audience Question / Pain Point"
+
+# Pages to monitor for changes (use Visualping or n8n HTTP + diff)
+page_change_monitors:
+  targets:
+    - url: "https://platform.com/policies"
+      name: "Platform Policy Page"
+      frequency: "daily"
+
+# APIs for structured data
+apis:
+  - name: "Relevant API"
+    url: "https://api.example.com/docs"
+    purpose: "Structured data collection"
+    frequency: "weekly"
+    cost: "Free"
+
+# Scrape targets (sites without RSS or API)
+scrape_targets:
+  targets:
+    - url: "https://competitor-c.com/blog"
+      name: "Competitor C Blog (no RSS)"
+      frequency: "weekly"

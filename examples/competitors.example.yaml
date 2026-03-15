@@ -1,0 +1,42 @@
+# Reality Engine — Competitor Profiles
+# Copy and customize for your niche.
+#
+# Location: ~/.reality-engine/instances/<slug>/competitors.yaml
+#
+# Tiers help prioritize monitoring. Define your own tier names.
+# monitoring_priority: HIGH = check every cycle, MEDIUM = daily, LOW = weekly
+
+competitors:
+  tier_1:
+    - name: "Top Competitor"
+      url: "https://top-competitor.com"
+      blog: "https://top-competitor.com/blog/"
+      rss: "https://top-competitor.com/blog/feed/"
+      linkedin: "https://www.linkedin.com/company/top-competitor"
+      services: ["service 1", "service 2", "service 3"]
+      differentiator: "What makes them notable"
+      monitoring_priority: "HIGH"
+
+    - name: "Second Competitor"
+      url: "https://second-competitor.com"
+      blog: "https://second-competitor.com/blog/"
+      rss: null  # No RSS feed found
+      linkedin: "https://www.linkedin.com/company/second-competitor"
+      services: ["service 1", "service 2"]
+      differentiator: "Their positioning"
+      monitoring_priority: "HIGH"
+
+  tier_2:
+    - name: "Mid-tier Competitor"
+      url: "https://mid-tier.com"
+      blog: "https://mid-tier.com/blog/"
+      rss: "https://mid-tier.com/blog/feed/"
+      services: ["service 1", "service 2"]
+      differentiator: "Their angle"
+      monitoring_priority: "MEDIUM"
+
+  thought_leaders:
+    - name: "Industry Expert"
+      company: "Their Company"
+      linkedin: "https://www.linkedin.com/in/expert/"
+      style: "What they're known for. Their content focus."

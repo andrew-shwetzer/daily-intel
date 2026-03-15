@@ -1,0 +1,96 @@
+{
+  "_comment": "Slack Block Kit template for daily digest. Variables use {{mustache}} syntax for n8n templating.",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Intelligence Brief -- {{brief_date}}"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Brief #{{brief_number}} · {{signal_count}} signals · {{p1_count}} urgent"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Today's Synthesis*\n{{editorial_headline}}\n\n{{editorial_body_short}}"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":red_circle: *ACT TODAY*"
+      }
+    },
+    {
+      "_comment": "Repeat block for each P1 signal -- n8n generates these dynamically",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*<{{signal_url}}|{{signal_title}}>*\n{{signal_summary}}\n`{{signal_source}}` · Score: `{{signal_score}}`"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":large_orange_circle: *THIS WEEK* ({{p2_count}} signals)"
+      }
+    },
+    {
+      "_comment": "Condensed list for P2 -- one line per signal",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{p2_list}}"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":bulb: *Content Ideas*\n{{content_ideas_text}}"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": ":eyes: *Competitor Activity*\n{{competitor_activity_text}}"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Reality Engine · <{{dashboard_url}}|View Full Brief>"
+        }
+      ]
+    }
+  ]
+}

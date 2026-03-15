@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intelligence Brief -- {{brief_date}}</title>
+<!--[if mso]>
+<noscript>
+<xml>
+<o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: #0a0a0f;
+    color: #e0e0e0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .email-wrapper {
+    max-width: 680px;
+    margin: 0 auto;
+    background: #0f1019;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0f1019 0%, #1a1a2e 100%);
+    border-bottom: 1px solid rgba(245, 166, 35, 0.3);
+    padding: 32px 40px;
+  }
+
+  .header-brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #f5a623;
+    margin-bottom: 4px;
+  }
+
+  .header-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .header-meta {
+    font-size: 13px;
+    color: #808090;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .header-meta span {
+    color: #f5a623;
+  }
+
+  /* Section */
+  .section {
+    padding: 28px 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #f5a623;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(245, 166, 35, 0.2);
+  }
+
+  /* Priority badges */
+  .priority-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .priority-p1 {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .priority-p2 {
+    background: rgba(245, 166, 35, 0.15);
+    color: #f5a623;
+    border: 1px solid rgba(245, 166, 35, 0.3);
+  }
+
+  .priority-p3 {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+
+  /* Signal cards */
+  .signal-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .signal-card:hover {
+    border-color: rgba(245, 166, 35, 0.2);
+  }
+
+  .signal-category {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #808090;
+    margin-bottom: 6px;
+  }
+
+  .signal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .signal-title a {
+    color: #ffffff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(245, 166, 35, 0.4);
+  }
+
+  .signal-title a:hover {
+    border-bottom-color: #f5a623;
+  }
+
+  .signal-summary {
+    font-size: 14px;
+    color: #a0a0b0;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .signal-meta {
+    font-size: 12px;
+    color: #606070;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .signal-meta .source {
+    color: #f5a623;
+  }
+
+  .signal-meta .score {
+    color: #818cf8;
+  }
+
+  /* Content angle callout */
+  .content-angle {
+    background: rgba(245, 166, 35, 0.08);
+    border-left: 3px solid #f5a623;
+    padding: 10px 14px;
+    margin-top: 10px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .content-angle-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #f5a623;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .content-angle-text {
+    font-size: 13px;
+    color: #d0d0d0;
+    font-style: italic;
+  }
+
+  /* Editorial section */
+  .editorial {
+    background: linear-gradient(135deg, rgba(245, 166, 35, 0.06) 0%, rgba(99, 102, 241, 0.04) 100%);
+    border: 1px solid rgba(245, 166, 35, 0.15);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .editorial h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 12px;
+  }
+
+  .editorial p {
+    font-size: 14px;
+    color: #c0c0d0;
+    line-height: 1.7;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f5a623;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #808090;
+    margin-top: 6px;
+  }
+
+  /* Content ideas */
+  .idea-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .idea-item:last-child {
+    border-bottom: none;
+  }
+
+  .idea-number {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f5a623;
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 24px;
+  }
+
+  .idea-hook {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 2px;
+  }
+
+  .idea-format {
+    font-size: 11px;
+    color: #808090;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Competitor section */
+  .competitor-item {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .competitor-item:last-child {
+    border-bottom: none;
+  }
+
+  .competitor-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #818cf8;
+  }
+
+  .competitor-action {
+    font-size: 13px;
+    color: #a0a0b0;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 24px 40px;
+    text-align: center;
+    border-top: 1px solid rgba(245, 166, 35, 0.15);
+  }
+
+  .footer p {
+    font-size: 11px;
+    color: #505060;
+    line-height: 1.5;
+  }
+
+  .footer a {
+    color: #f5a623;
+    text-decoration: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .header, .section { padding: 20px 24px; }
+    .header-title { font-size: 20px; }
+    .stats-row { flex-direction: column; }
+    .signal-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="email-wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-brand">Reality Engine</div>
+    <div class="header-title">Intelligence Brief</div>
+    <div class="header-meta">
+      <span>{{brief_date}}</span> &middot; Brief #{{brief_number}} &middot; {{signal_count}} signals collected
+    </div>
+  </div>
+
+  <!-- QUICK STATS -->
+  <div class="section">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">{{p1_count}}</div>
+        <div class="stat-label">Act Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{p2_count}}</div>
+        <div class="stat-label">This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{competitor_posts}}</div>
+        <div class="stat-label">Competitor Posts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{content_ideas}}</div>
+        <div class="stat-label">Content Ideas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITORIAL SYNTHESIS -->
+  <div class="section">
+    <div class="section-label">Today's Synthesis</div>
+    <div class="editorial">
+      <h3>{{editorial_headline}}</h3>
+      <p>{{editorial_body}}</p>
+    </div>
+  </div>
+
+  <!-- PRIORITY 1: ACT TODAY -->
+  <div class="section">
+    <div class="section-label">
+      <span class="priority-badge priority-p1">P1</span> Act Today
+    </div>
+
+    {{#each p1_signals}}
+    <div class="signal-card">
+      <div class="signal-category">{{this.category}}</div>
+      <div class="signal-title"><a href="{{this.url}}">{{this.title}}</a></div>
+      <div class="signal-summary">{{this.summary}}</div>
+      {{#if this.content_angle}}
+      <div class="content-angle">
+        <div class="content-angle-label">Content Angle</div>
+        <div class="content-angle-text">{{this.content_angle}}</div>
+      </div>
+      {{/if}}
+      <div class="signal-meta">
+        <span class="source">{{this.source_name}}</span> &middot;
+        <span class="score">Score: {{this.composite_score}}</span> &middot;
+        {{this.published_at}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  <!-- PRIORITY 2: THIS WEEK -->
+  <div class="section">
+    <div class="section-label">
+      <span class="priority-badge priority-p2">P2</span> This Week
+    </div>
+
+    {{#each p2_signals}}
+    <div class="signal-card">
+      <div class="signal-category">{{this.category}}</div>
+      <div class="signal-title"><a href="{{this.url}}">{{this.title}}</a></div>
+      <div class="signal-summary">{{this.summary}}</div>
+      <div class="signal-meta">
+        <span class="source">{{this.source_name}}</span> &middot;
+        <span class="score">Score: {{this.composite_score}}</span>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  <!-- COMPETITOR ACTIVITY -->
+  <div class="section">
+    <div class="section-label">Competitor Activity</div>
+
+    {{#each competitor_activity}}
+    <div class="competitor-item">
+      <span class="competitor-name">{{this.name}}</span>
+      <span class="competitor-action"> -- {{this.action}}</span>
+    </div>
+    {{/each}}
+  </div>
+
+  <!-- CONTENT IDEAS -->
+  <div class="section">
+    <div class="section-label">Content Ideas</div>
+
+    {{#each content_ideas_list}}
+    <div class="idea-item">
+      <span class="idea-number">{{this.number}}</span>
+      <div>
+        <div class="idea-hook">{{this.hook}}</div>
+        <div class="idea-format">{{this.format}} &middot; {{this.category}}</div>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  <!-- DATA POINTS -->
+  <div class="section">
+    <div class="section-label">Stats & Data Points</div>
+
+    {{#each data_points}}
+    <div class="signal-card" style="padding: 14px 18px;">
+      <div class="signal-summary" style="margin: 0;">
+        <strong style="color: #f5a623;">{{this.stat}}</strong> -- {{this.context}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>
+      Reality Engine &middot; Intelligence Brief<br>
+      <a href="#">Tune preferences</a> &middot; <a href="#">View all signals</a> &middot; <a href="#">Content queue</a>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
