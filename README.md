@@ -1,161 +1,215 @@
 # Reality Engine
 
-An AI-powered intelligence monitoring system that watches your industry, scores signals with Claude, and delivers daily newsletter briefs via email and Slack.
+An AI-powered intelligence newsletter that monitors your niche and delivers a daily editorial brief to your inbox.
 
-Built for [n8n](https://n8n.io) + [Supabase](https://supabase.com) + [Claude API](https://docs.anthropic.com).
+Tell it your industry, your competitors, and where you want the brief. It finds the sources, scores every signal with Claude AI, and synthesizes a daily newsletter, delivered to Gmail or Slack.
 
-## What It Does
-
-1. **Collects** signals from 50+ sources: RSS feeds, Google News, Reddit, page change monitors, and web scrapers
-2. **Scores** every signal with Claude AI on relevance, urgency, and content potential (3-axis composite scoring)
-3. **Generates** a daily editorial intelligence brief, synthesizing the top signals into actionable insights
-4. **Delivers** via HTML email newsletter and Slack digest
-5. **Tracks** competitors, content ideas, and data points over time
-6. **Self-monitors** with a health check workflow that alerts on failures
-
-## Architecture
+## How It Works
 
 ```
-RSS Feeds ──┐
-Google News ─┤
-Reddit RSS ──┼──▶ n8n Workflows ──▶ Claude AI Scoring ──▶ Supabase
-Page Monitors┤                                               │
-Web Scrapers─┘                                               │
-                                                              ▼
-                                              Daily Brief Generator
-                                                    │         │
-                                                    ▼         ▼
-                                              HTML Email   Slack Digest
+RSS Feeds ────┐
+Google News ──┤
+Reddit ───────┼── Python Script ── Claude AI Scoring ── Supabase
+Competitor    │        (cron)            │                  │
+  Blogs ──────┘                          │                  │
+                                         ▼                  ▼
+                                  Daily Brief Generator
+                                      │         │
+                                      ▼         ▼
+                                Gmail Inbox   Slack Channel
 ```
 
-### 6 n8n Workflows
+1. **Collects** signals from RSS feeds, Google News, Reddit, and competitor blogs
+2. **Scores** every signal with Claude on relevance, urgency, and content potential
+3. **Synthesizes** the top signals into an editorial brief with content ideas
+4. **Delivers** via Gmail (to yourself) or Slack webhook
+5. **Stores** everything in Supabase for history and deduplication
 
-| Workflow | Trigger | Sources |
-|----------|---------|---------|
-| WF1: RSS Aggregator | Every 4h | Blog feeds, industry sites, regulatory |
-| WF2: News Monitor | Every 4h | Google News RSS keyword streams |
-| WF3: Social Monitor | Every 12h | Reddit search feeds |
-| WF4: Weekly Scraper | Weekly | Sites without RSS |
-| WF5: Brief Generator | Daily 6AM | Supabase query > Claude synthesis > Email + Slack |
-| WF6: Health Check | Daily 11PM | n8n execution API > Slack alerts |
+## Quick Start (with Claude Code)
 
-### Signal Scoring
+If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), the setup is fully automated:
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/andrew-shwetzer/reality-engine.git
+cd reality-engine
+
+# 2. Install the package
+pip install -e .
+
+# 3. Copy the skill to Claude Code
+cp -r skill/SKILL.md ~/.claude/skills/reality-engine/SKILL.md
+
+# 4. Run the skill
+# In Claude Code, type: /reality-engine
+```
+
+The skill asks 5 questions, researches your niche, provisions your database, and sets up cron. You'll see a live preview of your brief before anything is deployed.
+
+## Manual Setup
+
+### 1. Install
+
+```bash
+git clone https://github.com/andrew-shwetzer/reality-engine.git
+cd reality-engine
+pip install -e .
+```
+
+### 2. Set Environment Variables
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...        # Required
+export SUPABASE_URL=https://xxx.supabase.co # Required
+export SUPABASE_SERVICE_KEY=eyJ...          # Required (from Supabase dashboard)
+export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx    # If using Gmail delivery
+export SLACK_WEBHOOK_URL=https://hooks...   # If using Slack delivery
+```
+
+### 3. Create Database
+
+Apply the schema to your Supabase project:
+
+```bash
+# Paste migrations/001_initial_schema.sql into the Supabase SQL Editor
+```
+
+### 4. Create Config
+
+```bash
+mkdir -p ~/.reality-engine/instances/my-niche
+```
+
+Create `~/.reality-engine/instances/my-niche/config.yaml`:
+
+```yaml
+niche: "Your Industry"
+company: "Your Company"
+description: "What you do in this space"
+
+sources:
+  - name: "Industry Blog"
+    url: "https://industry-blog.com/feed/"
+    source_type: "rss"
+    category: "Industry News"
+    frequency: "4h"
+  - name: "Google News Stream"
+    url: "https://news.google.com/rss/search?q=%22your+keyword%22&hl=en-US&gl=US&ceid=US:en"
+    source_type: "news_rss"
+    category: "Industry News"
+    frequency: "4h"
+  - name: "Reddit Community"
+    url: "https://www.reddit.com/r/yoursub/search/.rss?q=keyword&sort=new&restrict_sr=on"
+    source_type: "reddit_rss"
+    category: "Community"
+    frequency: "12h"
+
+competitors:
+  - name: "Competitor A"
+    url: "https://competitor-a.com"
+    blog_rss: "https://competitor-a.com/blog/feed/"
+  - name: "Competitor B"
+    url: "https://competitor-b.com"
+
+delivery:
+  method: "gmail"  # gmail, slack, or all
+  gmail_address: "you@gmail.com"
+  slack_webhook_url: "$SLACK_WEBHOOK_URL"  # $ prefix = read from env var
+  brief_time: "06:00"
+  timezone: "America/New_York"
+  collect_interval_hours: 4
+
+scoring:
+  min_relevance: 6
+  scoring_model: "claude-haiku-4-5-20251001"
+  brief_model: "claude-sonnet-4-6"
+
+database:
+  supabase_url: "$SUPABASE_URL"
+  supabase_key: "$SUPABASE_SERVICE_KEY"
+```
+
+### 5. Test
+
+```bash
+# Preview a brief without storing anything
+reality-engine -i my-niche preview
+
+# Run a full cycle (collect + brief)
+reality-engine -i my-niche run
+
+# Check health
+reality-engine -i my-niche health
+```
+
+### 6. Set Up Cron
+
+```bash
+crontab -e
+```
+
+Add:
+```
+# Collect signals every 4 hours
+0 */4 * * * cd /path/to/reality-engine && reality-engine -i my-niche collect >> ~/.reality-engine/logs/my-niche.log 2>&1
+
+# Generate and deliver brief at 6 AM
+0 6 * * * cd /path/to/reality-engine && reality-engine -i my-niche brief >> ~/.reality-engine/logs/my-niche.log 2>&1
+```
+
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `reality-engine -i <slug> collect` | Fetch RSS feeds, score with Claude, store in Supabase |
+| `reality-engine -i <slug> brief` | Generate editorial brief, deliver via Gmail/Slack |
+| `reality-engine -i <slug> run` | Collect + brief (full daily cycle) |
+| `reality-engine -i <slug> preview` | Generate a brief without storing anything |
+| `reality-engine -i <slug> health` | Check system status |
+| `reality-engine list-instances` | List all configured instances |
+
+## Signal Scoring
 
 Each signal is scored on 3 dimensions (1-5 each):
 
 - **Urgency:** 5 = breaking now, 1 = low priority
-- **Relevance:** 5 = core topic, 1 = tangential
-- **Content Potential:** 5 = multiple formats possible, 1 = archive only
+- **Relevance:** 5 = core to your niche, 1 = tangential
+- **Content Potential:** 5 = multiple content pieces, 1 = archive only
 
 **Composite = Urgency x Relevance x Content Potential** (max 125)
 
 | Score | Priority | Action |
 |-------|----------|--------|
-| 75-125 | P1 | Act today |
+| 75+ | P1 | Act today |
 | 30-74 | P2 | This week |
 | 10-29 | P3 | Backlog |
-| < 10 | Archive | Skip |
 
-## Prerequisites
+## Newsletter Design
 
-- [n8n](https://n8n.io) instance (self-hosted or cloud)
-- [Supabase](https://supabase.com) project
-- [Anthropic API key](https://console.anthropic.com) (for Claude scoring + brief generation)
-- Slack workspace + webhook/bot (for digest delivery)
-- Gmail or SMTP credentials (for email delivery)
+The daily brief uses a dark HUD aesthetic with:
+- Editorial synthesis (AI-generated headline + analysis connecting signals)
+- Priority-grouped signals with content angles
+- Competitor activity monitoring
+- Content ideas derived from signals
+- Data points for future content
 
-## Setup
+Customize the template in `reality_engine/templates/brief.html`.
 
-### 1. Database
+## Gmail App Password Setup
 
-Apply the schema migration to your Supabase project:
+Gmail delivery requires an App Password (not your regular password):
 
-```bash
-# Via Supabase CLI
-supabase db push migrations/001_initial_schema.sql
+1. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+2. Select "Mail" and your device
+3. Copy the 16-character password
+4. Set it: `export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx`
 
-# Or paste into Supabase SQL Editor
-```
+## Requirements
 
-This creates tables for signals, competitors, content pipeline, daily briefs, sources, and feedback.
-
-### 2. Configure Your Instance
-
-Copy the example config and customize for your niche:
-
-```bash
-mkdir -p ~/.reality-engine/instances/your-niche
-cp examples/config.example.yaml ~/.reality-engine/instances/your-niche/config.yaml
-cp examples/sources.example.yaml ~/.reality-engine/instances/your-niche/sources.yaml
-cp examples/competitors.example.yaml ~/.reality-engine/instances/your-niche/competitors.yaml
-```
-
-Edit each file for your industry, competitors, and sources.
-
-### 3. Seed Sources
-
-After editing your sources config, generate a seed SQL or insert sources via the Supabase API.
-
-### 4. Build n8n Workflows
-
-Follow the detailed build guide in [`n8n-workflows/README.md`](n8n-workflows/README.md). Each workflow has a node-by-node specification with AI prompts included.
-
-### 5. n8n Credentials
-
-| Credential | Type | Used By |
-|-----------|------|---------|
-| `supabase` | Supabase (Postgres) | All workflows |
-| `anthropic-claude` | HTTP Header Auth | WF1, WF2, WF3, WF5 |
-| `slack` | Slack OAuth2 | WF5, WF6 |
-| `gmail` | Gmail OAuth2 | WF5 |
-
-## File Structure
-
-```
-reality-engine/
-  README.md                      # This file
-  LICENSE                        # MIT
-  migrations/
-    001_initial_schema.sql       # Supabase schema (tables, indexes, functions)
-  n8n-workflows/
-    README.md                    # Node-by-node build guide for all 6 workflows
-  templates/
-    newsletter.html              # HTML email template (Handlebars)
-    slack-digest.json            # Slack Block Kit template
-  examples/
-    config.example.yaml          # Instance configuration
-    sources.example.yaml         # Monitored sources
-    competitors.example.yaml     # Competitor profiles
-  skill/
-    SKILL.md                     # Claude Code skill definition (optional)
-```
-
-## Claude Code Integration (Optional)
-
-If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), copy `skill/SKILL.md` to `~/.claude/skills/reality-engine/SKILL.md` to get interactive commands:
-
-- `/reality-engine` - guided setup for a new instance
-- `/reality-engine your-niche status` - check health
-- `/reality-engine your-niche brief` - generate on-demand brief
-- `/reality-engine your-niche tune` - adjust config
-
-## Customization
-
-### Adding Sources
-
-Add entries to your `sources.yaml` and insert into the `sources` table. The RSS aggregator workflow pulls active sources from the database, so new sources are picked up automatically.
-
-### Adjusting Scoring
-
-Edit the AI scoring prompt in WF1 (see `n8n-workflows/README.md`) to match your niche. The prompt defines what scores 9-10 vs 1-2 for your industry.
-
-### Newsletter Design
-
-The HTML template in `templates/newsletter.html` uses a dark HUD aesthetic. Modify the CSS to match your brand.
-
-### Feedback Loop
-
-Use the `feedback` table to log "more of this" / "less of this" preferences. Include feedback history in the AI scoring prompt to tune relevance over time.
+- Python 3.10+
+- [Anthropic API key](https://console.anthropic.com)
+- [Supabase](https://supabase.com) project (free tier works)
+- Gmail account (for email delivery) or Slack workspace (for Slack delivery)
 
 ## License
 

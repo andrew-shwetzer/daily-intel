@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ niche }} Intelligence Brief - {{ brief_date }}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background-color: #0a0a0f;
+    color: #e0e0e0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .email-wrapper { max-width: 680px; margin: 0 auto; background: #0f1019; }
+  .header {
+    background: linear-gradient(135deg, #0f1019 0%, #1a1a2e 100%);
+    border-bottom: 1px solid rgba(245, 166, 35, 0.3);
+    padding: 32px 40px;
+  }
+  .header-brand { font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #f5a623; margin-bottom: 4px; }
+  .header-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .header-meta { font-size: 13px; color: #808090; font-family: 'JetBrains Mono', monospace; }
+  .header-meta span { color: #f5a623; }
+  .section { padding: 28px 40px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: #f5a623; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: rgba(245,166,35,0.2); }
+  .priority-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 3px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .priority-p1 { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .priority-p2 { background: rgba(245,166,35,0.15); color: #f5a623; border: 1px solid rgba(245,166,35,0.3); }
+  .signal-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 20px; margin-bottom: 12px;
+  }
+  .signal-category { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #808090; margin-bottom: 6px; }
+  .signal-title { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 8px; line-height: 1.4; }
+  .signal-title a { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(245,166,35,0.4); }
+  .signal-title a:hover { border-bottom-color: #f5a623; }
+  .signal-summary { font-size: 14px; color: #a0a0b0; line-height: 1.6; margin-bottom: 10px; }
+  .signal-meta { font-size: 12px; color: #606070; font-family: 'JetBrains Mono', monospace; }
+  .signal-meta .source { color: #f5a623; }
+  .signal-meta .score { color: #818cf8; }
+  .content-angle {
+    background: rgba(245,166,35,0.08); border-left: 3px solid #f5a623;
+    padding: 10px 14px; margin-top: 10px; border-radius: 0 4px 4px 0;
+  }
+  .content-angle-label { font-size: 10px; font-weight: 700; color: #f5a623; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+  .content-angle-text { font-size: 13px; color: #d0d0d0; font-style: italic; }
+  .editorial {
+    background: linear-gradient(135deg, rgba(245,166,35,0.06) 0%, rgba(99,102,241,0.04) 100%);
+    border: 1px solid rgba(245,166,35,0.15); border-radius: 8px; padding: 24px; margin-bottom: 16px;
+  }
+  .editorial h3 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .editorial p { font-size: 14px; color: #c0c0d0; line-height: 1.7; }
+  .stats-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .stat-card {
+    flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 16px; text-align: center;
+  }
+  .stat-number { font-size: 28px; font-weight: 700; color: #f5a623; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+  .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #808090; margin-top: 6px; }
+  .idea-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .idea-item:last-child { border-bottom: none; }
+  .idea-number { font-size: 14px; font-weight: 700; color: #f5a623; font-family: 'JetBrains Mono', monospace; min-width: 24px; }
+  .idea-hook { font-size: 14px; font-weight: 600; color: #e0e0e0; margin-bottom: 2px; }
+  .idea-format { font-size: 11px; color: #808090; font-family: 'JetBrains Mono', monospace; }
+  .competitor-item { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .competitor-item:last-child { border-bottom: none; }
+  .competitor-name { font-size: 13px; font-weight: 600; color: #818cf8; }
+  .competitor-action { font-size: 13px; color: #a0a0b0; }
+  .footer { padding: 24px 40px; text-align: center; border-top: 1px solid rgba(245,166,35,0.15); }
+  .footer p { font-size: 11px; color: #505060; line-height: 1.5; }
+  .footer a { color: #f5a623; text-decoration: none; }
+  @media (max-width: 600px) {
+    .header, .section { padding: 20px 24px; }
+    .header-title { font-size: 20px; }
+    .stats-row { flex-direction: column; }
+    .signal-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="email-wrapper">
+  <div class="header">
+    <div class="header-brand">Reality Engine</div>
+    <div class="header-title">{{ niche }} Brief</div>
+    <div class="header-meta">
+      <span>{{ brief_date }}</span> &middot; {{ signal_count }} signals collected
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">{{ p1_count }}</div>
+        <div class="stat-label">Act Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{ p2_count }}</div>
+        <div class="stat-label">This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{ competitor_posts }}</div>
+        <div class="stat-label">Competitor Posts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{ content_ideas }}</div>
+        <div class="stat-label">Content Ideas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Today's Synthesis</div>
+    <div class="editorial">
+      <h3>{{ editorial_headline }}</h3>
+      <p>{{ editorial_body }}</p>
+    </div>
+  </div>
+
+  {% if p1_signals %}
+  <div class="section">
+    <div class="section-label"><span class="priority-badge priority-p1">P1</span> Act Today</div>
+    {% for s in p1_signals %}
+    <div class="signal-card">
+      <div class="signal-category">{{ s.category }}</div>
+      <div class="signal-title"><a href="{{ s.url }}">{{ s.title }}</a></div>
+      <div class="signal-summary">{{ s.summary }}</div>
+      {% if s.content_angle %}
+      <div class="content-angle">
+        <div class="content-angle-label">Content Angle</div>
+        <div class="content-angle-text">{{ s.content_angle }}</div>
+      </div>
+      {% endif %}
+      <div class="signal-meta">
+        <span class="source">{{ s.source_name }}</span> &middot;
+        <span class="score">Score: {{ s.urgency * s.relevance_score * s.content_potential }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if p2_signals %}
+  <div class="section">
+    <div class="section-label"><span class="priority-badge priority-p2">P2</span> This Week</div>
+    {% for s in p2_signals %}
+    <div class="signal-card">
+      <div class="signal-category">{{ s.category }}</div>
+      <div class="signal-title"><a href="{{ s.url }}">{{ s.title }}</a></div>
+      <div class="signal-summary">{{ s.summary }}</div>
+      <div class="signal-meta">
+        <span class="source">{{ s.source_name }}</span> &middot;
+        <span class="score">Score: {{ s.urgency * s.relevance_score * s.content_potential }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if competitor_activity %}
+  <div class="section">
+    <div class="section-label">Competitor Activity</div>
+    {% for c in competitor_activity %}
+    <div class="competitor-item">
+      <span class="competitor-name">{{ c.name }}</span>
+      <span class="competitor-action"> -- {{ c.action }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if content_ideas_list %}
+  <div class="section">
+    <div class="section-label">Content Ideas</div>
+    {% for idea in content_ideas_list %}
+    <div class="idea-item">
+      <span class="idea-number">{{ idea.number }}</span>
+      <div>
+        <div class="idea-hook">{{ idea.hook }}</div>
+        <div class="idea-format">{{ idea.format }}{% if idea.why_now %} &middot; {{ idea.why_now }}{% endif %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if data_points %}
+  <div class="section">
+    <div class="section-label">Stats & Data Points</div>
+    {% for dp in data_points %}
+    <div class="signal-card" style="padding: 14px 18px;">
+      <div class="signal-summary" style="margin: 0;">
+        <strong style="color: #f5a623;">{{ dp.stat }}</strong> -- {{ dp.context }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    <p>
+      Reality Engine &middot; {{ niche }}<br>
+      Powered by Claude AI
+    </p>
+  </div>
+</div>
+</body>
+</html>

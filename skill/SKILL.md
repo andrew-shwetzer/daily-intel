@@ -1,23 +1,24 @@
 ---
 name: reality-engine
 description: |
-  Industry-agnostic intelligence + content engine. Monitors competitors, news, blogs, and signals
-  for any niche, then generates daily briefs and content ideas delivered via email + Slack.
-argument-hint: "<instance-slug> [status|tune|brief|build|content] e.g. 'saas brief'"
+  Build your own AI-powered intelligence newsletter. Monitors any niche via RSS, scores signals
+  with Claude, and delivers a daily editorial brief to your inbox or Slack. Full auto-setup:
+  asks 5 questions, researches your niche, provisions Supabase, generates config, shows a live
+  sample brief, and sets up cron. Everything runs on your machine.
+argument-hint: "[new | <slug> status | <slug> brief | <slug> tune | list]"
 model: claude-opus-4-6
 user_invocable: true
 ---
 
-# /reality-engine -- Intelligence + Content Monitoring Engine
+# /reality-engine -- Your Personal Intelligence Newsletter
 
-You are the orchestrator for Reality Engine, a reusable system that monitors any industry niche and produces daily intelligence briefs + content ideas. It works for any vertical: SaaS, recruiting, healthcare, real estate, logistics, etc.
+You build a custom AI-powered intelligence newsletter for any niche in one session. 5 questions, then everything is auto-provisioned: database, sources, config, cron schedule. The user sees a live sample brief before committing.
 
-## When NOT to Use This Skill
+## When NOT to Use
 
-- **One-off research questions.** Use `/research` instead.
-- **Content creation itself.** This skill generates content *ideas* and briefs, not finished posts.
-- **Live data fetching.** This skill designs and configures monitoring systems. The n8n workflows handle runtime polling.
-- **Niches with fewer than 3 identifiable competitors or sources.** The scoring framework needs signal volume to be useful.
+- One-off research questions (use `/research`)
+- Niches with fewer than 3 identifiable sources (not enough signal volume)
+- Building a public newsletter product (this is for personal/team intelligence)
 
 ## Architecture
 
@@ -25,100 +26,261 @@ You are the orchestrator for Reality Engine, a reusable system that monitors any
 ~/.reality-engine/
   instances/
     <slug>/
-      config.yaml          <- instance configuration (niche, sources, delivery, scoring)
-      sources.yaml         <- all monitored sources (RSS, APIs, scrape targets)
-      competitors.yaml     <- competitor profiles and monitoring targets
-      feedback.yaml        <- user feedback history (more/less of this)
-      briefs/              <- generated briefs archive
+      config.yaml          <- full configuration (generated)
+      briefs/              <- archived briefs
         YYYY-MM-DD.md
-      content-queue.md     <- running content ideas backlog
 ```
+
+The Python package `reality_engine` runs on the user's machine via cron:
+- `reality-engine collect` - fetch RSS, score with Claude, store in Supabase
+- `reality-engine brief` - generate editorial brief, deliver via Gmail/Slack
+- `reality-engine run` - collect + brief (full daily cycle)
+- `reality-engine health` - check system status
+- `reality-engine preview` - generate a brief without storing anything
 
 ## Command Routing
 
 ```python
 if no args or args == "new":
-    -> run INTAKE (interactive setup)
-
+    -> ONBOARDING (5 questions + auto-setup)
 elif args == "list":
-    -> list all instances in ~/.reality-engine/instances/
-
+    -> list instances
 elif args[0] matches existing instance:
-    if len(args) == 1 or args[1] == "status":
-        -> show STATUS
-    elif args[1] == "tune":
-        -> run TUNE (adjust config interactively)
-    elif args[1] == "brief":
-        -> generate ON-DEMAND brief
-    elif args[1] == "build":
-        -> generate n8n workflows from config
-    elif args[1] == "content":
-        -> show content queue + generate new ideas from recent signals
-    else:
-        -> show help
-
+    if args[1] == "status": -> show health
+    elif args[1] == "brief": -> run preview command
+    elif args[1] == "tune": -> interactive config adjustment
+    else: -> show help
 else:
-    -> "Instance '<name>' not found. Run /reality-engine list to see configured instances."
+    -> "Instance not found"
 ```
 
-## Phase 1: INTAKE (New Instance Setup)
+---
 
-Run an interactive intake to configure a new monitoring instance.
+## ONBOARDING FLOW (5 Questions)
 
-### Required Questions
+When the user runs `/reality-engine` or `/reality-engine new`, run this conversational flow. Be warm, direct, and helpful. Suggest smart defaults.
 
-1. **Niche/Industry:** "What industry or niche do you want to monitor?"
-2. **Your Company:** "What's your company name and URL?"
-3. **Business Goal:** "What's the primary goal?" (Competitive intelligence / Content generation / Sales signals / All)
-4. **Known Competitors:** "Who are your top 3-5 competitors? (or say 'research for me')"
-5. **Content Channels:** "Where do you publish content?" (LinkedIn, Blog, Newsletter, YouTube, etc.)
-6. **Delivery Channels:** "Where should daily briefs be delivered?" (Email, Slack, Both)
-7. **Delivery Schedule:** "When should the daily brief arrive?" (Default: 6:00 AM)
-8. **Signal Categories:** "What types of signals matter most?"
-9. **Content Style:** "What's your content voice?" (Authoritative, Conversational, Data-driven, Contrarian)
-10. **Budget for Tools:** "Any budget for monitoring tools? (or free-only)"
+### Prerequisites Check
 
-### After Intake
+Before starting, verify:
+1. `ANTHROPIC_API_KEY` is set. If not: "You'll need an Anthropic API key. Get one at console.anthropic.com, then set it: `export ANTHROPIC_API_KEY=sk-...`"
+2. The `reality-engine` Python package is installed. Check with: `python -m reality_engine --help`. If not installed: "Let's install the package first: `pip install -e /path/to/reality-engine`"
 
-1. Save config.yaml
-2. Deploy research subagents to find competitors, sources, and validate feeds
-3. Save sources.yaml and competitors.yaml
-4. Show summary and ask for confirmation
+### Question 1: Your Niche
+"What niche or industry do you want to monitor? Be specific."
 
-## Phase 2: BUILD
+Examples to help them narrow:
+- Not "technology" but "AI developer tools"
+- Not "healthcare" but "telehealth platforms for mental health"
+- Not "finance" but "DeFi lending protocols"
 
-Generate n8n workflow specifications from the config.
+Save as `niche`.
 
-## Phase 3: STATUS
+### Question 2: Your Role
+"What do you do in this space? One line is fine."
 
-Read config and display instance health: sources, competitors, delivery, signal counts, health indicator.
+This tunes relevance scoring. A founder monitoring competitors needs different signals than a content creator looking for trends.
 
-## Phase 4: TUNE
+Save as `description`.
 
-Interactive adjustment of any config parameter. Feedback saved to feedback.yaml.
+### Question 3: Competitors
+"Who are your top 3 competitors? Drop names, URLs, or say 'find them for me'."
 
-## Phase 5: BRIEF (On-Demand)
+If "find them for me": deploy a research agent (subagent_type: general-purpose, model: sonnet) to research the niche and find 5-8 competitors with URLs, blog URLs, RSS feeds. Validate each RSS feed with a test fetch.
 
-Generate a brief immediately from current RSS feeds.
+Save as `competitors`.
 
-## Signal Scoring Framework
+### Question 4: Delivery
+"Where should your daily brief go?"
 
-Each signal scored on 3 dimensions (1-5 each):
+Options:
+- **Gmail** (most common for personal): "What's your Gmail address? You'll need a Google App Password (not your regular password). I'll show you how to set that up."
+- **Slack**: "Drop a Slack webhook URL, or I can walk you through creating one."
+- **Both**: Collect both.
 
-**Urgency:** 5=breaking now, 4=this week, 3=recent trend, 2=evergreen, 1=low priority
-**Relevance:** 5=core topic, 4=adjacent with clear angle, 3=connectable, 2=requires creative framing, 1=tangential
-**Content Potential:** 5=multiple formats possible, 4=strong single format, 3=supporting content, 2=minor data point, 1=archive only
+Save as `delivery`.
 
-**Composite = Urgency x Relevance x Content Potential**
-- 75-125: Priority 1 -- Act today
-- 30-74: Priority 2 -- This week
-- 10-29: Priority 3 -- Backlog
-- Below 10: Archive
+### Question 5: Schedule
+"What time should your brief arrive? (default: 6:00 AM)"
+
+Also ask timezone if not obvious from system. Save as `schedule`.
+
+---
+
+## AUTO-SETUP (After 5 Questions)
+
+### Step 1: Research Sources
+
+Deploy 2 research agents in parallel:
+
+**Agent A -- Industry Sources:**
+"For the niche '{niche}', find 15-20 monitoring sources. Include:
+- Industry blogs with RSS feeds (check /feed, /rss, /blog/feed)
+- Google News RSS keyword streams (construct URLs)
+- Reddit communities (construct search RSS URLs)
+- Regulatory/legal sources if relevant
+- Trade publications
+
+For each: name, URL, RSS feed URL, category, and whether you verified the feed loads.
+Return as YAML list. Never fabricate URLs."
+
+**Agent B -- Competitor Intelligence:**
+"For these competitors in the '{niche}' space: {competitor_list}
+For each competitor: find their blog URL, check for RSS feed (/feed, /rss, /blog/feed, /atom.xml),
+find their LinkedIn company page. Verify each URL loads.
+Return as YAML list."
+
+### Step 2: Validate Sources
+
+After research agents return, validate ALL discovered RSS feeds by actually fetching them:
+```python
+import feedparser
+feed = feedparser.parse(url)
+# Keep only feeds that return entries and don't have bozo errors
+```
+
+Remove dead feeds. Report: "Found X sources, Y validated, Z removed (dead feeds)."
+
+### Step 3: Magic Moment
+
+**This is the key experience.** Before provisioning anything permanent, show the user what their newsletter will look like with real data.
+
+1. Fetch the top 10 validated RSS feeds
+2. Collect the most recent entries
+3. Score them with Claude using the user's niche context
+4. Generate an editorial brief
+5. Display the markdown brief right in the terminal
+
+Say: "Here's a preview of what your daily brief will look like, using live data from your sources:"
+
+Then display the brief.
+
+Then ask: "Like what you see? Ready to set up the full system?"
+
+If yes, continue. If they want adjustments (more sources, different categories, different voice), adjust and re-preview.
+
+### Step 4: Provision Supabase
+
+Use the Supabase MCP tools:
+
+1. `list_organizations` - get org ID
+2. `list_projects` - check if user has an existing project they want to use
+3. If new project needed:
+   a. `get_cost` with type "project"
+   b. Show cost to user, ask for confirmation
+   c. `confirm_cost` to get confirmation ID
+   d. `create_project` with name "reality-engine-{slug}", region closest to user
+   e. Poll `get_project` until status is active (may take 2-3 minutes)
+4. `get_project_url` - get the API URL
+5. `get_publishable_keys` - get the anon key
+6. `apply_migration` with the schema SQL from migrations/001_initial_schema.sql
+7. Seed sources using `execute_sql` with INSERT statements generated from validated sources
+
+**Important:** The service role key is NOT available via MCP. Tell the user:
+"Your Supabase project is set up. You'll need to grab the service role key from your Supabase dashboard (Settings > API > service_role key) and set it as an environment variable:
+`export SUPABASE_SERVICE_KEY=your-key-here`"
+
+Also have them set: `export SUPABASE_URL=https://xxx.supabase.co`
+
+### Step 5: Generate Config
+
+Generate `~/.reality-engine/instances/{slug}/config.yaml` with all discovered sources, competitors, delivery settings, and scoring config baked in.
+
+### Step 6: Gmail App Password Setup (if Gmail delivery)
+
+Walk the user through:
+1. Go to myaccount.google.com/apppasswords
+2. Select "Mail" and your device
+3. Copy the 16-character password
+4. Set it: `export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx`
+
+### Step 7: Set Up Cron
+
+Generate the crontab entries:
+```
+# Reality Engine - {niche}
+# Collect signals every {interval} hours
+0 */{interval} * * * cd /path/to/reality-engine && python -m reality_engine -i {slug} collect >> ~/.reality-engine/logs/{slug}.log 2>&1
+
+# Generate and deliver daily brief at {time}
+{minute} {hour} * * * cd /path/to/reality-engine && python -m reality_engine -i {slug} brief >> ~/.reality-engine/logs/{slug}.log 2>&1
+```
+
+Show the user and ask: "Want me to add these to your crontab?"
+
+If yes, add them. If no, show them how to do it manually.
+
+### Step 8: Confirmation
+
+```
+Your Reality Engine is live!
+
+Niche: {niche}
+Sources: {N} validated feeds
+Competitors: {N} tracked
+Delivery: {method} to {target}
+Schedule: Daily at {time} {timezone}
+Database: Supabase ({project_name})
+
+Next steps:
+1. Set environment variables (if not already done):
+   export ANTHROPIC_API_KEY=sk-...
+   export SUPABASE_URL=https://xxx.supabase.co
+   export SUPABASE_SERVICE_KEY=...
+   {export GMAIL_APP_PASSWORD=... if gmail}
+
+2. Test a full cycle:
+   python -m reality_engine -i {slug} run
+
+3. Your first real brief arrives tomorrow at {time}!
+
+To check health: python -m reality_engine -i {slug} health
+To preview a brief: python -m reality_engine -i {slug} preview
+To adjust settings: /reality-engine {slug} tune
+```
+
+---
+
+## TUNE (Adjust Config)
+
+Interactive adjustment of any config parameter:
+- Add/remove sources (with RSS validation)
+- Add/remove competitors
+- Change delivery channels or schedule
+- Adjust scoring thresholds
+- Change brief voice/style
+
+After changes, re-validate affected sources and update config.yaml.
+
+---
+
+## STATUS
+
+Read config and display:
+- Instance name, niche, source count, competitor count
+- Delivery config
+- If DB is configured: today's signal count, health indicator
+- Last brief date (check briefs/ directory)
+
+---
+
+## Failure Modes
+
+| Failure | Detection | Recovery |
+|---------|-----------|----------|
+| No Supabase MCP | MCP tool call fails | Tell user to connect Supabase MCP in Claude Code settings, or create project manually via dashboard |
+| ANTHROPIC_API_KEY missing | os.environ check | Show setup instructions |
+| All RSS feeds dead | 0 validated sources | Expand research, try different source types |
+| Gmail auth fails | SMTP error | Walk through App Password setup again |
+| Supabase project not ready | get_project shows non-active status | Wait and retry (up to 5 minutes) |
+
+---
 
 ## Critical Constraints
 
 - All instance data stored in ~/.reality-engine/instances/<slug>/
-- Config files use YAML format
-- Brief generation uses Claude for AI scoring and summarization
-- n8n workflow specs are documentation; actual workflow creation requires manual n8n setup or API access
-- Never fabricate data. If a source can't be verified, flag it.
+- Python package must be installed locally
+- User owns all infrastructure (Supabase project, API keys, cron)
+- Never store API keys in config files. Always use environment variables.
+- Never fabricate sources. Every RSS feed must be validated before adding to config.
+- The magic moment preview must use REAL data, not mock data.
