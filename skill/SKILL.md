@@ -3,8 +3,9 @@ name: daily-intel
 description: |
   Build your own AI-powered intelligence newsletter. Monitors any niche via RSS, scores signals
   with Claude, and delivers a daily editorial brief to your inbox or Slack. Full auto-setup:
-  asks 5 questions, researches your niche, provisions Supabase, generates config, shows a live
-  sample brief, and sets up cron. Everything runs on your machine.
+  asks 6 questions, researches your niche, provisions Supabase, generates config, shows a live
+  sample brief, and sets up cron. Everything runs on your machine. Supports personal mode
+  (Gmail/Slack delivery) and audience mode (Beehiiv drafts for newsletter publishers).
 argument-hint: "[new | <slug> status | <slug> brief | <slug> tune | list]"
 model: claude-opus-4-6
 user_invocable: true
@@ -12,13 +13,12 @@ user_invocable: true
 
 # /daily-intel -- Your Personal Intelligence Newsletter
 
-You build a custom AI-powered intelligence newsletter for any niche in one session. 5 questions, then everything is auto-provisioned: database, sources, config, cron schedule. The user sees a live sample brief before committing.
+You build a custom AI-powered intelligence newsletter for any niche in one session. 6 questions, then everything is auto-provisioned: database, sources, config, cron schedule. The user sees a live sample brief before committing.
 
 ## When NOT to Use
 
 - One-off research questions (use `/research`)
 - Niches with fewer than 3 identifiable sources (not enough signal volume)
-- Building a public newsletter product (this is for personal/team intelligence)
 
 ## Architecture
 
@@ -33,7 +33,7 @@ You build a custom AI-powered intelligence newsletter for any niche in one sessi
 
 The Python package `daily_intel` runs on the user's machine via cron:
 - `daily-intel collect` - fetch RSS, score with Claude, store in Supabase
-- `daily-intel brief` - generate editorial brief, deliver via Gmail/Slack
+- `daily-intel brief` - generate editorial brief, deliver via Gmail/Slack/Beehiiv
 - `daily-intel run` - collect + brief (full daily cycle)
 - `daily-intel health` - check system status
 - `daily-intel preview` - generate a brief without storing anything
@@ -42,7 +42,7 @@ The Python package `daily_intel` runs on the user's machine via cron:
 
 ```python
 if no args or args == "new":
-    -> ONBOARDING (5 questions + auto-setup)
+    -> ONBOARDING (6 questions + auto-setup)
 elif args == "list":
     -> list instances
 elif args[0] matches existing instance:
@@ -56,7 +56,7 @@ else:
 
 ---
 
-## ONBOARDING FLOW (5 Questions)
+## ONBOARDING FLOW (6 Questions)
 
 When the user runs `/daily-intel` or `/daily-intel new`, run this conversational flow. Be warm, direct, and helpful. Suggest smart defaults.
 
@@ -66,7 +66,16 @@ Before starting, verify:
 1. `ANTHROPIC_API_KEY` is set. If not: "You'll need an Anthropic API key. Get one at console.anthropic.com, then set it: `export ANTHROPIC_API_KEY=sk-...`"
 2. The `daily-intel` Python package is installed. Check with: `python -m daily_intel --help`. If not installed: "Let's install the package first: `pip install -e /path/to/daily-intel`"
 
-### Question 1: Your Niche
+### Question 1: Mode
+"Is this for your own intelligence, or are you building a newsletter for an audience?"
+
+Options:
+- **Personal** ("I want to stay on top of my niche"): mode = `personal`, delivery defaults to Gmail
+- **Audience** ("I want to publish a newsletter for subscribers"): mode = `audience`, delivery defaults to Beehiiv
+
+Save as `mode`.
+
+### Question 2: Your Niche
 "What niche or industry do you want to monitor? Be specific."
 
 Examples to help them narrow:
@@ -76,38 +85,45 @@ Examples to help them narrow:
 
 Save as `niche`.
 
-### Question 2: Your Role
+### Question 3: Your Role
 "What do you do in this space? One line is fine."
 
 This tunes relevance scoring. A founder monitoring competitors needs different signals than a content creator looking for trends.
 
 Save as `description`.
 
-### Question 3: Competitors
+### Question 4: Competitors
 "Who are your top 3 competitors? Drop names, URLs, or say 'find them for me'."
 
 If "find them for me": deploy a research agent (subagent_type: general-purpose, model: sonnet) to research the niche and find 5-8 competitors with URLs, blog URLs, RSS feeds. Validate each RSS feed with a test fetch.
 
 Save as `competitors`.
 
-### Question 4: Delivery
+### Question 5: Delivery
 "Where should your daily brief go?"
 
-Options:
-- **Gmail** (most common for personal): "What's your Gmail address? You'll need a Google App Password (not your regular password). I'll show you how to set that up."
+Delivery options depend on mode:
+
+**Personal mode:**
+- **Gmail** (default): "What's your Gmail address? You'll need a Google App Password (not your regular password). I'll show you how to set that up."
+- **Any SMTP**: "Got a custom mail server? Drop the smtp_host and smtp_port and I'll configure it."
 - **Slack**: "Drop a Slack webhook URL, or I can walk you through creating one."
-- **Both**: Collect both.
+- **Both Gmail and Slack**: Collect both.
+
+**Audience mode:**
+- **Beehiiv** (default): "Drop your Beehiiv API key and publication ID. I'll set it up to auto-create drafts -- you publish from your Beehiiv dashboard when ready."
+- **Slack** (in addition to Beehiiv): "Want a Slack ping when a new draft is ready? Drop a Slack webhook URL."
 
 Save as `delivery`.
 
-### Question 5: Schedule
+### Question 6: Schedule
 "What time should your brief arrive? (default: 6:00 AM)"
 
 Also ask timezone if not obvious from system. Save as `schedule`.
 
 ---
 
-## AUTO-SETUP (After 5 Questions)
+## AUTO-SETUP (After 6 Questions)
 
 ### Step 1: Research Sources
 
@@ -184,15 +200,63 @@ Also have them set: `export SUPABASE_URL=https://xxx.supabase.co`
 
 ### Step 5: Generate Config
 
-Generate `~/.daily-intel/instances/{slug}/config.yaml` with all discovered sources, competitors, delivery settings, and scoring config baked in.
+Generate `~/.daily-intel/instances/{slug}/config.yaml` with all discovered sources, competitors, delivery settings, scoring config, and mode baked in.
 
-### Step 6: Gmail App Password Setup (if Gmail delivery)
+The config must include `mode: personal` or `mode: audience` at the top level.
 
+Example personal mode config snippet:
+```yaml
+mode: personal
+niche: "AI developer tools"
+delivery:
+  gmail:
+    to: user@gmail.com
+  slack:
+    webhook_url: https://hooks.slack.com/...
+```
+
+Example audience mode config snippet:
+```yaml
+mode: audience
+niche: "AI developer tools"
+delivery:
+  beehiiv:
+    api_key: "${BEEHIIV_API_KEY}"
+    publication_id: pub_xxxxx
+  slack:
+    webhook_url: https://hooks.slack.com/...   # optional: notify when draft is ready
+```
+
+### Step 6: Delivery Credentials Setup
+
+**If personal mode with Gmail:**
 Walk the user through:
 1. Go to myaccount.google.com/apppasswords
 2. Select "Mail" and your device
 3. Copy the 16-character password
 4. Set it: `export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx`
+
+**If personal mode with custom SMTP:**
+Show the env vars needed:
+```
+export SMTP_HOST=smtp.example.com
+export SMTP_PORT=587
+export SMTP_USER=user@example.com
+export SMTP_PASSWORD=...
+```
+
+**If audience mode with Beehiiv:**
+Walk the user through:
+1. Go to app.beehiiv.com > Settings > API
+2. Generate an API key
+3. Copy the publication ID from your publication settings
+4. Set the env vars:
+   ```
+   export BEEHIIV_API_KEY=...
+   export BEEHIIV_PUBLICATION_ID=pub_xxxxx
+   ```
+
+Note for audience mode: "The system will create a draft post in Beehiiv for each brief. You review and publish from your Beehiiv dashboard -- full editorial control stays with you."
 
 ### Step 7: Set Up Cron
 
@@ -212,9 +276,11 @@ If yes, add them. If no, show them how to do it manually.
 
 ### Step 8: Confirmation
 
+**Personal mode:**
 ```
 Your Daily Intel is live!
 
+Mode: Personal (private intelligence feed)
 Niche: {niche}
 Sources: {N} validated feeds
 Competitors: {N} tracked
@@ -239,6 +305,39 @@ To preview a brief: python -m daily_intel -i {slug} preview
 To adjust settings: /daily-intel {slug} tune
 ```
 
+**Audience mode:**
+```
+Your Daily Intel is live!
+
+Mode: Audience (newsletter for subscribers)
+Niche: {niche}
+Sources: {N} validated feeds
+Competitors: {N} tracked
+Delivery: Beehiiv drafts{, + Slack notification if configured}
+Schedule: Draft created daily at {time} {timezone}
+Database: Supabase ({project_name})
+
+Workflow: Each morning a draft appears in your Beehiiv dashboard.
+Review, edit, and publish on your own schedule.
+
+Next steps:
+1. Set environment variables (if not already done):
+   export ANTHROPIC_API_KEY=sk-...
+   export SUPABASE_URL=https://xxx.supabase.co
+   export SUPABASE_SERVICE_KEY=...
+   export BEEHIIV_API_KEY=...
+   export BEEHIIV_PUBLICATION_ID=pub_xxxxx
+
+2. Test a full cycle:
+   python -m daily_intel -i {slug} run
+
+3. Your first draft will appear in Beehiiv tomorrow at {time}!
+
+To check health: python -m daily_intel -i {slug} health
+To preview a brief: python -m daily_intel -i {slug} preview
+To adjust settings: /daily-intel {slug} tune
+```
+
 ---
 
 ## TUNE (Adjust Config)
@@ -249,6 +348,7 @@ Interactive adjustment of any config parameter:
 - Change delivery channels or schedule
 - Adjust scoring thresholds
 - Change brief voice/style
+- Switch mode (personal <-> audience) -- note this changes delivery defaults
 
 After changes, re-validate affected sources and update config.yaml.
 
@@ -257,7 +357,7 @@ After changes, re-validate affected sources and update config.yaml.
 ## STATUS
 
 Read config and display:
-- Instance name, niche, source count, competitor count
+- Instance name, niche, mode, source count, competitor count
 - Delivery config
 - If DB is configured: today's signal count, health indicator
 - Last brief date (check briefs/ directory)
@@ -272,6 +372,7 @@ Read config and display:
 | ANTHROPIC_API_KEY missing | os.environ check | Show setup instructions |
 | All RSS feeds dead | 0 validated sources | Expand research, try different source types |
 | Gmail auth fails | SMTP error | Walk through App Password setup again |
+| Beehiiv API error | HTTP 401/403 | Walk through API key and publication ID setup |
 | Supabase project not ready | get_project shows non-active status | Wait and retry (up to 5 minutes) |
 
 ---
@@ -284,3 +385,4 @@ Read config and display:
 - Never store API keys in config files. Always use environment variables.
 - Never fabricate sources. Every RSS feed must be validated before adding to config.
 - The magic moment preview must use REAL data, not mock data.
+- Audience mode creates Beehiiv drafts only. The user controls publishing. Never auto-publish.

@@ -49,14 +49,14 @@ def generate_brief(
     p3 = [s for s in signals if config.scoring.p3_threshold <= _composite(s) < config.scoring.p2_threshold]
     competitor_signals = [s for s in signals if "competitor" in s.get("category", "").lower()]
 
-    # Generate editorial synthesis with Claude
+    # Generate editorial synthesis with Claude (mode-aware prompt)
     editorial = _generate_editorial(config, signals, p1, competitor_signals)
 
     # Build template context
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     context = {
         "brief_date": today,
-        "brief_number": "",  # Set by caller if tracking
+        "brief_number": "",
         "signal_count": len(signals),
         "p1_count": len(p1),
         "p2_count": len(p2),
@@ -72,15 +72,13 @@ def generate_brief(
         "content_ideas_list": editorial.get("content_ideas", []),
         "data_points": editorial.get("data_points", []),
         "niche": config.niche,
+        "mode": config.mode,
     }
 
-    # Render HTML
-    html = _render_html(context)
-
-    # Render markdown
+    # Render HTML (mode selects template)
+    template_name = "brief_audience.html" if config.is_audience else "brief.html"
+    html = _render_html(context, template_name)
     markdown = _render_markdown(context)
-
-    # Build Slack blocks
     slack_blocks = _build_slack_blocks(context)
 
     # Store brief in DB
@@ -112,7 +110,9 @@ def generate_brief(
 
 
 def _composite(signal: dict) -> int:
-    """Calculate composite score."""
+    """Calculate composite score. Use DB value if available, else compute."""
+    if "composite_score" in signal and signal["composite_score"] is not None:
+        return signal["composite_score"]
     return (
         signal.get("urgency", 0)
         * signal.get("relevance_score", 0)
@@ -120,10 +120,74 @@ def _composite(signal: dict) -> int:
     )
 
 
+# ── Mode-specific prompts ──────────────────────────────────────────
+
+PERSONAL_PROMPT = """You are a senior intelligence analyst writing a daily brief for a decision-maker.
+Their niche: "{niche}"
+Their context: {description}
+
+Write like a CIA analyst: sharp, terse, action-oriented. Every sentence earns its place.
+Connect dots between signals. Tell them what matters and what to DO about it.
+Include competitive intelligence freely. This brief is confidential.
+
+Voice: Direct, no fluff, occasionally contrarian. Data over opinion.
+
+Given today's {signal_count} signals ({p1_count} urgent), produce:
+
+1. EDITORIAL HEADLINE: One line capturing the most important theme.
+2. EDITORIAL BODY: 3-4 sentences connecting signals. What should they do?
+3. EDITORIAL SHORT: 1-2 sentences for Slack.
+4. CONTENT IDEAS: 5 specific content ideas. For each: hook, format (carousel/video/text/blog), why_now.
+5. COMPETITOR ACTIVITY: What competitors published, what it reveals about their strategy.
+6. DATA POINTS: 2-3 stats that could anchor future content.
+
+Signals: {signals_json}
+
+Return JSON:
+{{
+  "editorial_headline": "string",
+  "editorial_body": "string",
+  "editorial_body_short": "string",
+  "content_ideas": [{{"hook": "", "format": "", "why_now": "", "number": 1}}],
+  "competitor_activity": [{{"name": "", "action": ""}}],
+  "data_points": [{{"stat": "", "context": ""}}]
+}}"""
+
+AUDIENCE_PROMPT = """You are an editorial journalist writing a newsletter for subscribers interested in "{niche}".
+Publication context: {description}
+
+Write like the best newsletter editors: engaging, informative, opinionated but fair.
+Your readers are professionals in or adjacent to this space. They want insight, not just news.
+Do NOT include competitive intelligence or internal strategy. This is public.
+
+Voice: Authoritative, accessible, occasionally witty. Lead with "so what" not "what happened."
+
+Given today's {signal_count} signals ({p1_count} notable), produce:
+
+1. EDITORIAL HEADLINE: Compelling, clickable, specific. This is the email subject line.
+2. EDITORIAL BODY: 3-4 sentences framing the biggest story. Why should readers care?
+3. EDITORIAL SHORT: 1-2 sentence preview text for email clients.
+4. CONTENT IDEAS: 5 angles readers would want to explore further. For each: hook (conversational), format, why_now.
+5. INDUSTRY MOVES: Notable company/product activity, framed as trend analysis (not competitive intel).
+6. DATA POINTS: 2-3 stats that surprised you or challenge assumptions.
+
+Signals: {signals_json}
+
+Return JSON:
+{{
+  "editorial_headline": "string",
+  "editorial_body": "string",
+  "editorial_body_short": "string",
+  "content_ideas": [{{"hook": "", "format": "", "why_now": "", "number": 1}}],
+  "competitor_activity": [{{"name": "", "action": ""}}],
+  "data_points": [{{"stat": "", "context": ""}}]
+}}"""
+
+
 def _generate_editorial(
     config: Config, all_signals: list[dict], p1: list[dict], competitor_signals: list[dict]
 ) -> dict:
-    """Use Claude to generate editorial synthesis."""
+    """Use Claude to generate editorial synthesis (mode-aware)."""
     client = Anthropic()
 
     signals_summary = json.dumps(
@@ -136,40 +200,19 @@ def _generate_editorial(
                 "score": _composite(s),
                 "content_angle": s.get("content_angle"),
             }
-            for s in all_signals[:30]  # Cap context
+            for s in all_signals[:30]
         ],
         indent=2,
     )
 
-    prompt = f"""You are the editor of a daily intelligence newsletter about "{config.niche}".
-Context: {config.description}
-
-Write like the best intelligence analysts: sharp, opinionated, action-oriented.
-Connect dots between signals. Identify what matters and why.
-
-Voice: Authoritative but not stuffy. Data-driven. Occasionally contrarian.
-Think Morning Brew meets CIA Presidential Daily Brief.
-
-Given today's {len(all_signals)} signals ({len(p1)} urgent), produce:
-
-1. EDITORIAL HEADLINE: One compelling line capturing today's most important theme.
-2. EDITORIAL BODY: 3-4 sentences connecting the biggest signals. What story do they tell?
-3. EDITORIAL SHORT: 1-2 sentences for Slack digest.
-4. CONTENT IDEAS: 5 specific content ideas. For each: hook (opening line), format (carousel/video/text/blog), why_now.
-5. COMPETITOR ACTIVITY: If any competitor signals exist, 2-3 sentences on what they reveal.
-6. DATA POINTS: 2-3 specific numbers or stats that could anchor content.
-
-Signals: {signals_summary}
-
-Return JSON:
-{{
-  "editorial_headline": "string",
-  "editorial_body": "string",
-  "editorial_body_short": "string",
-  "content_ideas": [{{"hook": "", "format": "", "why_now": "", "number": 1}}],
-  "competitor_activity": [{{"name": "", "action": ""}}],
-  "data_points": [{{"stat": "", "context": ""}}]
-}}"""
+    template = AUDIENCE_PROMPT if config.is_audience else PERSONAL_PROMPT
+    prompt = template.format(
+        niche=config.niche,
+        description=config.description,
+        signal_count=len(all_signals),
+        p1_count=len(p1),
+        signals_json=signals_summary,
+    )
 
     try:
         response = client.messages.create(
@@ -178,7 +221,6 @@ Return JSON:
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()
-        # Extract JSON from response (handle code blocks, preamble)
         match = re.search(r'(\{[\s\S]*\})', text)
         if match:
             text = match.group(1)
@@ -195,14 +237,14 @@ Return JSON:
         }
 
 
-def _render_html(context: dict) -> str:
+def _render_html(context: dict, template_name: str = "brief.html") -> str:
     """Render HTML brief using Jinja2 template."""
     try:
         env = Environment(
             loader=FileSystemLoader(str(TEMPLATE_DIR)),
             autoescape=select_autoescape(["html"]),
         )
-        template = env.get_template("brief.html")
+        template = env.get_template(template_name)
         return template.render(**context)
     except Exception as e:
         logger.warning(f"HTML rendering failed: {e}")
@@ -222,18 +264,20 @@ def _render_markdown(context: dict) -> str:
     ]
 
     if context["p1_signals"]:
-        lines.append("## Act Today (P1)")
+        label = "Top Stories" if context.get("mode") == "audience" else "Act Today (P1)"
+        lines.append(f"## {label}")
         lines.append("")
         for s in context["p1_signals"]:
             lines.append(f"### {s.get('title', 'Untitled')}")
             lines.append(f"{s.get('summary', '')}")
             if s.get("content_angle"):
-                lines.append(f"> Content angle: {s['content_angle']}")
-            lines.append(f"*{s.get('source_name', '')}* | Score: {_composite(s)}")
+                lines.append(f"> {s['content_angle']}")
+            lines.append(f"*{s.get('source_name', '')}*")
             lines.append("")
 
     if context["p2_signals"]:
-        lines.append("## This Week (P2)")
+        label = "Also Notable" if context.get("mode") == "audience" else "This Week (P2)"
+        lines.append(f"## {label}")
         lines.append("")
         for s in context["p2_signals"]:
             lines.append(f"- **{s.get('title', '')}** ({s.get('source_name', '')}): {s.get('summary', '')}")

@@ -31,11 +31,13 @@ class Competitor:
 
 @dataclass
 class DeliveryConfig:
-    method: str = "gmail"  # gmail, slack, substack
+    method: str = "gmail"  # gmail, slack, beehiiv
     gmail_address: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 465
     slack_webhook_url: str = ""
-    substack_api_key: str = ""
-    substack_publication_id: str = ""
+    beehiiv_api_key: str = ""
+    beehiiv_publication_id: str = ""
     brief_time: str = "06:00"
     timezone: str = "America/New_York"
     collect_interval_hours: int = 4
@@ -60,6 +62,7 @@ class DatabaseConfig:
 @dataclass
 class Config:
     instance_id: str = "default"
+    mode: str = "personal"  # personal | audience
     niche: str = ""
     company: str = ""
     description: str = ""
@@ -69,6 +72,10 @@ class Config:
     scoring: ScoringConfig = field(default_factory=ScoringConfig)
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     categories: list = field(default_factory=list)
+
+    @property
+    def is_audience(self) -> bool:
+        return self.mode == "audience"
 
     @classmethod
     def load(cls, config_path: Path) -> "Config":
@@ -85,9 +92,11 @@ class Config:
         delivery = DeliveryConfig(
             method=delivery_raw.get("method", "gmail"),
             gmail_address=delivery_raw.get("gmail_address", ""),
+            smtp_host=delivery_raw.get("smtp_host", "smtp.gmail.com"),
+            smtp_port=delivery_raw.get("smtp_port", 465),
             slack_webhook_url=_resolve_env(delivery_raw.get("slack_webhook_url", "")),
-            substack_api_key=_resolve_env(delivery_raw.get("substack_api_key", "")),
-            substack_publication_id=delivery_raw.get("substack_publication_id", ""),
+            beehiiv_api_key=_resolve_env(delivery_raw.get("beehiiv_api_key", "")),
+            beehiiv_publication_id=delivery_raw.get("beehiiv_publication_id", ""),
             brief_time=delivery_raw.get("brief_time", "06:00"),
             timezone=delivery_raw.get("timezone", "America/New_York"),
             collect_interval_hours=delivery_raw.get("collect_interval_hours", 4),
@@ -114,6 +123,7 @@ class Config:
 
         return cls(
             instance_id=instance_id,
+            mode=raw.get("mode", "personal"),
             niche=raw.get("niche", ""),
             company=raw.get("company", ""),
             description=raw.get("description", ""),
@@ -128,6 +138,8 @@ class Config:
     def validate(self) -> list[str]:
         """Return list of validation errors (empty = valid)."""
         errors = []
+        if self.mode not in ("personal", "audience"):
+            errors.append("mode must be 'personal' or 'audience'")
         if not self.niche:
             errors.append("niche is required")
         if not self.sources:
@@ -136,6 +148,11 @@ class Config:
             errors.append("ANTHROPIC_API_KEY environment variable not set")
         if self.delivery.method == "gmail" and not self.delivery.gmail_address:
             errors.append("gmail_address required when delivery method is gmail")
+        if self.delivery.method == "beehiiv":
+            if not self.delivery.beehiiv_api_key:
+                errors.append("beehiiv_api_key required when delivery method is beehiiv")
+            if not self.delivery.beehiiv_publication_id:
+                errors.append("beehiiv_publication_id required when delivery method is beehiiv")
         return errors
 
 

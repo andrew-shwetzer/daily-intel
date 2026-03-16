@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ niche }} - {{ brief_date }}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: #f8f7f4;
+    color: #1a1a1a;
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .email-wrapper {
+    max-width: 640px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #e8e6e1;
+  }
+
+  /* Header */
+  .header {
+    padding: 40px 48px 32px;
+    border-bottom: 3px solid #1a1a1a;
+  }
+
+  .header-brand {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #6b6b6b;
+    margin-bottom: 8px;
+  }
+
+  .header-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .header-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #8a8a8a;
+  }
+
+  /* Section */
+  .section {
+    padding: 32px 48px;
+    border-bottom: 1px solid #e8e6e1;
+  }
+
+  .section-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #b08d57;
+    margin-bottom: 20px;
+  }
+
+  /* Editorial */
+  .editorial {
+    margin-bottom: 8px;
+  }
+
+  .editorial p {
+    font-size: 18px;
+    color: #2a2a2a;
+    line-height: 1.8;
+  }
+
+  /* Signal cards */
+  .signal-card {
+    padding: 24px 16px;
+    border-bottom: 1px solid #f0ede8;
+  }
+
+  .signal-card:last-child {
+    border-bottom: none;
+  }
+
+  .signal-category {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #b08d57;
+    margin-bottom: 8px;
+  }
+
+  .signal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .signal-title a {
+    color: #1a1a1a;
+    text-decoration: none;
+    border-bottom: 1px solid #d4c5a9;
+    padding: 4px 0;
+    display: inline-block;
+  }
+
+  .signal-title a:hover {
+    border-bottom-color: #b08d57;
+  }
+
+  .signal-summary {
+    font-size: 16px;
+    color: #4a4a4a;
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .signal-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #9a9a9a;
+  }
+
+  /* Content angle */
+  .content-angle {
+    background: #faf8f3;
+    border-left: 3px solid #b08d57;
+    padding: 12px 16px;
+    margin-top: 12px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .content-angle-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b08d57;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .content-angle-text {
+    font-size: 15px;
+    color: #5a5a5a;
+    font-style: italic;
+  }
+
+  /* Stats */
+  .stats-row {
+    display: flex;
+    gap: 1px;
+    background: #e8e6e1;
+    border: 1px solid #e8e6e1;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: #ffffff;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    margin-top: 8px;
+  }
+
+  /* Ideas */
+  .idea-item {
+    padding: 14px 0;
+    border-bottom: 1px solid #f0ede8;
+  }
+
+  .idea-item:last-child {
+    border-bottom: none;
+  }
+
+  .idea-hook {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2a2a2a;
+    margin-bottom: 4px;
+  }
+
+  .idea-format {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #9a9a9a;
+  }
+
+  /* Industry moves */
+  .move-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #f0ede8;
+  }
+
+  .move-item:last-child {
+    border-bottom: none;
+  }
+
+  .move-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #b08d57;
+  }
+
+  .move-action {
+    font-size: 15px;
+    color: #4a4a4a;
+  }
+
+  /* Data points */
+  .data-card {
+    background: #faf8f3;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+  }
+
+  .data-stat {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .data-context {
+    font-size: 14px;
+    color: #6a6a6a;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 28px 48px;
+    text-align: center;
+    background: #faf8f3;
+  }
+
+  .footer p {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #9a9a9a;
+    line-height: 1.6;
+  }
+
+  .footer a {
+    color: #b08d57;
+    text-decoration: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .header, .section { padding: 24px 28px; }
+    .header-title { font-size: 26px; }
+    .stats-row { flex-direction: column; }
+    .footer { padding: 20px 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="email-wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-brand">{{ niche }}</div>
+    <div class="header-title">{{ editorial_headline }}</div>
+    <div class="header-meta">
+      {{ brief_date }} &middot; {{ signal_count }} signals analyzed
+    </div>
+  </div>
+
+  <!-- QUICK STATS -->
+  <div class="section">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">{{ p1_count }}</div>
+        <div class="stat-label">Top Stories</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{ p2_count }}</div>
+        <div class="stat-label">Also Notable</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{{ content_ideas }}</div>
+        <div class="stat-label">Content Ideas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITORIAL -->
+  <div class="section">
+    <div class="editorial">
+      <p>{{ editorial_body }}</p>
+    </div>
+  </div>
+
+  <!-- TOP STORIES -->
+  {% if p1_signals %}
+  <div class="section">
+    <div class="section-label">Top Stories</div>
+    {% for s in p1_signals %}
+    <div class="signal-card">
+      <div class="signal-category">{{ s.category }}</div>
+      <div class="signal-title"><a href="{{ s.url }}">{{ s.title }}</a></div>
+      <div class="signal-summary">{{ s.summary }}</div>
+      {% if s.content_angle %}
+      <div class="content-angle">
+        <div class="content-angle-label">Why It Matters</div>
+        <div class="content-angle-text">{{ s.content_angle }}</div>
+      </div>
+      {% endif %}
+      <div class="signal-meta">{{ s.source_name }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ALSO NOTABLE -->
+  {% if p2_signals %}
+  <div class="section">
+    <div class="section-label">Also Notable</div>
+    {% for s in p2_signals %}
+    <div class="signal-card">
+      <div class="signal-title"><a href="{{ s.url }}">{{ s.title }}</a></div>
+      <div class="signal-summary">{{ s.summary }}</div>
+      <div class="signal-meta">{{ s.source_name }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- INDUSTRY MOVES -->
+  {% if competitor_activity %}
+  <div class="section">
+    <div class="section-label">Industry Moves</div>
+    {% for c in competitor_activity %}
+    <div class="move-item">
+      <span class="move-name">{{ c.name }}</span>
+      <span class="move-action"> -- {{ c.action }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- CONTENT IDEAS -->
+  {% if content_ideas_list %}
+  <div class="section">
+    <div class="section-label">Ideas Worth Exploring</div>
+    {% for idea in content_ideas_list %}
+    <div class="idea-item">
+      <div class="idea-hook">{{ idea.hook }}</div>
+      <div class="idea-format">{{ idea.format }}{% if idea.why_now %} &middot; {{ idea.why_now }}{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- DATA POINTS -->
+  {% if data_points %}
+  <div class="section">
+    <div class="section-label">By the Numbers</div>
+    {% for dp in data_points %}
+    <div class="data-card">
+      <span class="data-stat">{{ dp.stat }}</span>
+      <span class="data-context"> -- {{ dp.context }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>
+      You're receiving this because you subscribed to {{ niche }} updates.<br>
+      Powered by <a href="https://github.com/andrew-shwetzer/daily-intel">Daily Intel</a>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

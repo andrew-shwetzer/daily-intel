@@ -1,9 +1,9 @@
-"""Delivery: send briefs via Gmail, Slack webhook, or Substack."""
+"""Delivery: send briefs via Gmail/SMTP, Slack webhook, or Beehiiv API."""
 
 from __future__ import annotations
 
-import json
 import logging
+import os
 import smtplib
 import ssl
 from email.mime.multipart import MIMEMultipart
@@ -19,7 +19,7 @@ logger = logging.getLogger("daily_intel")
 
 
 def deliver(config: Config, brief: dict) -> dict[str, bool]:
-    """Deliver a brief using all configured channels.
+    """Deliver a brief using the configured channel.
 
     Returns dict of {channel: success} results.
     """
@@ -32,24 +32,23 @@ def deliver(config: Config, brief: dict) -> dict[str, bool]:
     if method in ("slack", "all"):
         results["slack"] = _send_slack(config, brief)
 
-    if method in ("substack", "all"):
-        results["substack"] = _send_substack(config, brief)
+    if method in ("beehiiv", "all"):
+        results["beehiiv"] = _send_beehiiv(config, brief)
 
     return results
 
 
 def _send_gmail(config: Config, brief: dict) -> bool:
-    """Send HTML brief via Gmail SMTP.
+    """Send HTML brief via SMTP.
 
-    Requires GMAIL_APP_PASSWORD env var (Google App Password, not regular password).
+    Supports Gmail (default) or any SMTP server via smtp_host/smtp_port config.
+    Requires GMAIL_APP_PASSWORD env var (or SMTP_PASSWORD for non-Gmail).
     """
-    import os
-
     address = config.delivery.gmail_address
-    app_password = os.environ.get("GMAIL_APP_PASSWORD", "")
+    app_password = os.environ.get("GMAIL_APP_PASSWORD") or os.environ.get("SMTP_PASSWORD", "")
 
     if not address or not app_password:
-        logger.warning("Gmail delivery skipped: missing address or GMAIL_APP_PASSWORD")
+        logger.warning("Email delivery skipped: missing address or GMAIL_APP_PASSWORD/SMTP_PASSWORD")
         return False
 
     headline = brief.get("metadata", {}).get("editorial_headline", "Intelligence Brief")
@@ -70,13 +69,15 @@ def _send_gmail(config: Config, brief: dict) -> bool:
 
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        host = config.delivery.smtp_host
+        port = config.delivery.smtp_port
+        with smtplib.SMTP_SSL(host, port, context=context) as server:
             server.login(address, app_password)
             server.send_message(msg)
-        logger.info(f"Gmail brief sent to {address}")
+        logger.info(f"Email brief sent to {address}")
         return True
     except Exception as e:
-        logger.error(f"Gmail delivery failed: {e}")
+        logger.error(f"Email delivery failed: {e}")
         return False
 
 
@@ -90,7 +91,6 @@ def _send_slack(config: Config, brief: dict) -> bool:
 
     payload = brief.get("slack_blocks", {})
     if not payload:
-        # Fallback to simple text
         headline = brief.get("metadata", {}).get("editorial_headline", "Brief")
         payload = {"text": f"*{headline}*\n\n{brief.get('markdown', '')[:3000]}"}
 
@@ -112,43 +112,45 @@ def _send_slack(config: Config, brief: dict) -> bool:
         return False
 
 
-def _send_substack(config: Config, brief: dict) -> bool:
-    """Create a draft post on Substack via API.
+def _send_beehiiv(config: Config, brief: dict) -> bool:
+    """Create a draft post on Beehiiv via their API.
 
-    Note: Substack's API is limited. This creates a draft that
-    you publish manually or via their scheduled publishing.
+    Creates a draft that appears in the Beehiiv dashboard for review
+    and publishing. Does NOT auto-publish.
     """
-    api_key = config.delivery.substack_api_key
-    pub_id = config.delivery.substack_publication_id
+    api_key = config.delivery.beehiiv_api_key
+    pub_id = config.delivery.beehiiv_publication_id
 
     if not api_key or not pub_id:
-        logger.warning("Substack delivery skipped: missing API key or publication ID")
+        logger.warning("Beehiiv delivery skipped: missing API key or publication ID")
         return False
 
     headline = brief.get("metadata", {}).get("editorial_headline", "Intelligence Brief")
+    html_content = brief.get("html", brief.get("markdown", ""))
 
     try:
         response = requests.post(
-            f"https://substack.com/api/v1/post",
+            f"https://api.beehiiv.com/v2/publications/{pub_id}/posts",
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             json={
-                "publication_id": pub_id,
                 "title": headline,
-                "body_html": brief.get("html", brief.get("markdown", "")),
-                "draft": True,
-                "type": "newsletter",
+                "subtitle": f"Daily Intel: {config.niche}",
+                "status": "draft",
+                "content_html": html_content,
             },
             timeout=30,
         )
         if response.status_code in (200, 201):
-            logger.info("Substack draft created")
+            post_data = response.json()
+            post_id = post_data.get("data", {}).get("id", "unknown")
+            logger.info(f"Beehiiv draft created: {post_id}")
             return True
         else:
-            logger.error(f"Substack delivery failed: {response.status_code} {response.text}")
+            logger.error(f"Beehiiv delivery failed: {response.status_code} {response.text}")
             return False
     except Exception as e:
-        logger.error(f"Substack delivery failed: {e}")
+        logger.error(f"Beehiiv delivery failed: {e}")
         return False

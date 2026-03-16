@@ -1,8 +1,16 @@
 # Daily Intel
 
-An AI-powered intelligence newsletter that monitors your niche and delivers a daily editorial brief to your inbox.
+An AI-powered intelligence pipeline that monitors your niche, scores every signal with Claude, and delivers a daily brief.
 
-Tell it your industry, your competitors, and where you want the brief. It finds the sources, scores every signal with Claude AI, and synthesizes a daily newsletter, delivered to Gmail or Slack.
+Tell it your industry, your competitors, and where you want the brief. It finds the sources and synthesizes a daily editorial, delivered to Gmail, Slack, or Beehiiv.
+
+## Two Modes
+
+**Personal mode** — an intelligence brief for your own decision-making. Tight, dense, action-oriented. Delivered to your Gmail inbox or Slack channel.
+
+**Audience mode** — an editorial newsletter for subscribers. Same collection pipeline, different voice and structure. Delivered as a Beehiiv draft for review before publish.
+
+Set `mode: personal` or `mode: audience` in your config.
 
 ## How It Works
 
@@ -14,15 +22,15 @@ Competitor    │        (cron)            │                  │
   Blogs ──────┘                          │                  │
                                          ▼                  ▼
                                   Daily Brief Generator
-                                      │         │
-                                      ▼         ▼
-                                Gmail Inbox   Slack Channel
+                                      │         │         │
+                                      ▼         ▼         ▼
+                                Gmail/SMTP   Slack    Beehiiv Draft
 ```
 
 1. **Collects** signals from RSS feeds, Google News, Reddit, and competitor blogs
 2. **Scores** every signal with Claude on relevance, urgency, and content potential
 3. **Synthesizes** the top signals into an editorial brief with content ideas
-4. **Delivers** via Gmail (to yourself) or Slack webhook
+4. **Delivers** via Gmail/SMTP, Slack webhook, or Beehiiv draft
 5. **Stores** everything in Supabase for history and deduplication
 
 ## Quick Start (with Claude Code)
@@ -62,8 +70,10 @@ pip install -e .
 export ANTHROPIC_API_KEY=sk-ant-...        # Required
 export SUPABASE_URL=https://xxx.supabase.co # Required
 export SUPABASE_SERVICE_KEY=eyJ...          # Required (from Supabase dashboard)
-export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx    # If using Gmail delivery
+export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx    # If using Gmail/SMTP delivery
 export SLACK_WEBHOOK_URL=https://hooks...   # If using Slack delivery
+export BEEHIIV_API_KEY=...                  # If using Beehiiv delivery
+export BEEHIIV_PUBLICATION_ID=...           # If using Beehiiv delivery
 ```
 
 ### 3. Create Database
@@ -86,6 +96,7 @@ Create `~/.daily-intel/instances/my-niche/config.yaml`:
 niche: "Your Industry"
 company: "Your Company"
 description: "What you do in this space"
+mode: personal  # personal or audience
 
 sources:
   - name: "Industry Blog"
@@ -112,9 +123,13 @@ competitors:
     url: "https://competitor-b.com"
 
 delivery:
-  method: "gmail"  # gmail, slack, or all
+  method: "gmail"  # gmail, slack, beehiiv, or all
   gmail_address: "you@gmail.com"
+  smtp_host: "smtp.gmail.com"   # Supports any SMTP server
+  smtp_port: 587
   slack_webhook_url: "$SLACK_WEBHOOK_URL"  # $ prefix = read from env var
+  beehiiv_api_key: "$BEEHIIV_API_KEY"
+  beehiiv_publication_id: "$BEEHIIV_PUBLICATION_ID"
   brief_time: "06:00"
   timezone: "America/New_York"
   collect_interval_hours: 4
@@ -162,7 +177,7 @@ Add:
 | Command | What it does |
 |---------|-------------|
 | `daily-intel -i <slug> collect` | Fetch RSS feeds, score with Claude, store in Supabase |
-| `daily-intel -i <slug> brief` | Generate editorial brief, deliver via Gmail/Slack |
+| `daily-intel -i <slug> brief` | Generate editorial brief, deliver via configured method |
 | `daily-intel -i <slug> run` | Collect + brief (full daily cycle) |
 | `daily-intel -i <slug> preview` | Generate a brief without storing anything |
 | `daily-intel -i <slug> health` | Check system status |
@@ -184,7 +199,7 @@ Each signal is scored on 3 dimensions (1-5 each):
 | 30-74 | P2 | This week |
 | 10-29 | P3 | Backlog |
 
-## Newsletter Design
+## Brief Design
 
 The daily brief uses a dark HUD aesthetic with:
 - Editorial synthesis (AI-generated headline + analysis connecting signals)
@@ -192,6 +207,8 @@ The daily brief uses a dark HUD aesthetic with:
 - Competitor activity monitoring
 - Content ideas derived from signals
 - Data points for future content
+
+In audience mode, the voice and structure shift to editorial newsletter format, delivered as a Beehiiv draft.
 
 Customize the template in `daily_intel/templates/brief.html`.
 
@@ -204,12 +221,14 @@ Gmail delivery requires an App Password (not your regular password):
 3. Copy the 16-character password
 4. Set it: `export GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx`
 
+The SMTP delivery supports any compatible mail server via `smtp_host` and `smtp_port`.
+
 ## Requirements
 
 - Python 3.10+
 - [Anthropic API key](https://console.anthropic.com)
 - [Supabase](https://supabase.com) project (free tier works)
-- Gmail account (for email delivery) or Slack workspace (for Slack delivery)
+- Gmail/SMTP account, Slack workspace, or Beehiiv publication for delivery
 
 ## License
 

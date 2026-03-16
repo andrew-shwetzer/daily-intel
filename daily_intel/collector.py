@@ -30,13 +30,15 @@ def collect_all(config: Config, use_db: bool = True) -> list[dict]:
         List of scored signal dicts.
     """
     all_signals = []
+    total = len(config.sources)
 
-    for source in config.sources:
+    for idx, source in enumerate(config.sources, 1):
+        logger.info(f"[{idx}/{total}] Fetching {source.name}...")
         try:
             raw_entries = _fetch_source(source)
-            logger.info(f"Fetched {len(raw_entries)} entries from {source.name}")
+            logger.info(f"[{idx}/{total}] {len(raw_entries)} entries from {source.name}")
         except Exception as e:
-            logger.warning(f"Failed to fetch {source.name}: {e}")
+            logger.warning(f"[{idx}/{total}] Failed: {source.name}: {e}")
             continue
 
         # Dedup against DB if using database
