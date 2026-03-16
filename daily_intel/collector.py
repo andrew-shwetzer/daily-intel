@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+import requests
 import feedparser
 from anthropic import Anthropic
 
@@ -60,9 +62,24 @@ def collect_all(config: Config, use_db: bool = True) -> list[dict]:
     return all_signals
 
 
+def _extract_json(text: str) -> str:
+    """Extract JSON from Claude response, handling code blocks and preamble."""
+    # Try to find JSON array or object with regex
+    match = re.search(r'(\[[\s\S]*\]|\{[\s\S]*\})', text)
+    if match:
+        return match.group(1)
+    return text
+
+
 def _fetch_source(source: Source) -> list[dict]:
     """Fetch and normalize entries from an RSS source."""
-    feed = feedparser.parse(source.url)
+    # Pre-fetch with timeout to avoid feedparser hanging
+    try:
+        resp = requests.get(source.url, timeout=15, headers={"User-Agent": "DailyIntel/0.1"})
+        resp.raise_for_status()
+        feed = feedparser.parse(resp.content)
+    except requests.RequestException as e:
+        raise ValueError(f"HTTP fetch failed: {e}")
 
     if feed.bozo and not feed.entries:
         raise ValueError(f"Feed parse error: {feed.bozo_exception}")
@@ -126,35 +143,30 @@ Return ONLY a JSON array with one object per signal:
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()
-
-        # Extract JSON from response (handle markdown code blocks)
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
-
+        text = _extract_json(text)
         scores = json.loads(text)
     except Exception as e:
         logger.warning(f"Scoring failed for batch: {e}")
         return []
 
     scored_signals = []
+    seen_indices = set()
     for score_data in scores:
         idx = score_data.get("index", 0) - 1
-        if idx < 0 or idx >= len(entries):
+        if idx < 0 or idx >= len(entries) or idx in seen_indices:
             continue
+        seen_indices.add(idx)
 
-        entry = entries[idx]
-        entry.update({
+        signal = {
+            **entries[idx],
             "relevance_score": score_data.get("relevance_score", 1),
             "urgency": score_data.get("urgency", 1),
             "content_potential": score_data.get("content_potential", 1),
             "summary": score_data.get("summary", ""),
             "content_angle": score_data.get("content_angle"),
-            "category": score_data.get("category", entry["category"]),
+            "category": score_data.get("category", entries[idx]["category"]),
             "collected_at": datetime.now(timezone.utc).isoformat(),
-        })
-        scored_signals.append(entry)
+        }
+        scored_signals.append(signal)
 
     return scored_signals

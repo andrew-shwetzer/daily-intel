@@ -10,11 +10,12 @@
 -- ============================================
 CREATE TABLE IF NOT EXISTS signals (
   id              BIGSERIAL PRIMARY KEY,
+  instance_id     TEXT NOT NULL DEFAULT 'default',
   title           TEXT NOT NULL,
   url             TEXT NOT NULL,
-  url_hash        TEXT GENERATED ALWAYS AS (md5(url)) STORED,
+  url_hash        TEXT GENERATED ALWAYS AS (md5(instance_id || ':' || url)) STORED,
   source_name     TEXT NOT NULL,
-  source_type     TEXT NOT NULL CHECK (source_type IN ('rss', 'news', 'reddit', 'api', 'scrape', 'alert')),
+  source_type     TEXT NOT NULL CHECK (source_type IN ('rss', 'news_rss', 'reddit_rss', 'api', 'scrape', 'alert', 'page_monitor')),
   category        TEXT NOT NULL,
   published_at    TIMESTAMPTZ,
   collected_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -100,8 +101,10 @@ CREATE INDEX IF NOT EXISTS idx_content_publish_date ON content_pipeline (publish
 -- ============================================
 CREATE TABLE IF NOT EXISTS daily_briefs (
   id              SERIAL PRIMARY KEY,
-  brief_date      DATE NOT NULL UNIQUE,
-  brief_number    SERIAL,
+  instance_id     TEXT NOT NULL DEFAULT 'default',
+  brief_date      DATE NOT NULL,
+  brief_number    INTEGER,
+  UNIQUE (instance_id, brief_date),
   signal_count    INTEGER,
   html_content    TEXT,
   slack_content   TEXT,
@@ -166,10 +169,11 @@ CREATE POLICY "Service role full access" ON feedback FOR ALL USING (true);
 -- ============================================
 
 -- Get today's undelivered signals sorted by score
-CREATE OR REPLACE FUNCTION get_todays_signals()
+CREATE OR REPLACE FUNCTION get_todays_signals(inst_id TEXT DEFAULT 'default')
 RETURNS SETOF signals AS $$
   SELECT * FROM signals
-  WHERE collected_at >= CURRENT_DATE
+  WHERE instance_id = inst_id
+    AND collected_at >= CURRENT_DATE
     AND delivered = false
     AND archived = false
     AND relevance_score >= 6
@@ -177,10 +181,11 @@ RETURNS SETOF signals AS $$
 $$ LANGUAGE sql STABLE;
 
 -- Get signals for brief generation (last N hours)
-CREATE OR REPLACE FUNCTION get_brief_signals(since_hours INTEGER DEFAULT 24)
+CREATE OR REPLACE FUNCTION get_brief_signals(since_hours INTEGER DEFAULT 24, inst_id TEXT DEFAULT 'default')
 RETURNS SETOF signals AS $$
   SELECT * FROM signals
-  WHERE collected_at >= now() - (since_hours || ' hours')::interval
+  WHERE instance_id = inst_id
+    AND collected_at >= now() - (since_hours || ' hours')::interval
     AND delivered = false
     AND archived = false
     AND relevance_score >= 6

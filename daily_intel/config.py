@@ -59,6 +59,7 @@ class DatabaseConfig:
 
 @dataclass
 class Config:
+    instance_id: str = "default"
     niche: str = ""
     company: str = ""
     description: str = ""
@@ -73,10 +74,12 @@ class Config:
     def load(cls, config_path: Path) -> "Config":
         """Load config from YAML file, resolving env vars."""
         with open(config_path) as f:
-            raw = yaml.safe_load(f)
+            raw = yaml.safe_load(f) or {}
 
-        sources = [Source(**s) for s in raw.get("sources", [])]
-        competitors = [Competitor(**c) for c in raw.get("competitors", [])]
+        source_fields = {f.name for f in Source.__dataclass_fields__.values()}
+        competitor_fields = {f.name for f in Competitor.__dataclass_fields__.values()}
+        sources = [Source(**{k: v for k, v in s.items() if k in source_fields}) for s in raw.get("sources", [])]
+        competitors = [Competitor(**{k: v for k, v in c.items() if k in competitor_fields}) for c in raw.get("competitors", [])]
 
         delivery_raw = raw.get("delivery", {})
         delivery = DeliveryConfig(
@@ -106,7 +109,11 @@ class Config:
             supabase_key=_resolve_env(db_raw.get("supabase_key", "")),
         )
 
+        # Derive instance_id from config path directory name
+        instance_id = config_path.parent.name if config_path.parent.name != "." else "default"
+
         return cls(
+            instance_id=instance_id,
             niche=raw.get("niche", ""),
             company=raw.get("company", ""),
             description=raw.get("description", ""),

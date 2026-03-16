@@ -29,7 +29,7 @@ def deliver(config: Config, brief: dict) -> dict[str, bool]:
     if method in ("gmail", "all"):
         results["gmail"] = _send_gmail(config, brief)
 
-    if method in ("slack", "all") or config.delivery.slack_webhook_url:
+    if method in ("slack", "all"):
         results["slack"] = _send_slack(config, brief)
 
     if method in ("substack", "all"):

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from anthropic import Anthropic
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 if TYPE_CHECKING:
     from daily_intel.config import Config
@@ -177,11 +178,10 @@ Return JSON:
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
+        # Extract JSON from response (handle code blocks, preamble)
+        match = re.search(r'(\{[\s\S]*\})', text)
+        if match:
+            text = match.group(1)
         return json.loads(text)
     except Exception as e:
         logger.warning(f"Editorial generation failed: {e}")
@@ -198,7 +198,10 @@ Return JSON:
 def _render_html(context: dict) -> str:
     """Render HTML brief using Jinja2 template."""
     try:
-        env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
+        env = Environment(
+            loader=FileSystemLoader(str(TEMPLATE_DIR)),
+            autoescape=select_autoescape(["html"]),
+        )
         template = env.get_template("brief.html")
         return template.render(**context)
     except Exception as e:
