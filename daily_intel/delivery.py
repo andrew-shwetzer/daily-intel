@@ -13,9 +13,9 @@ from typing import TYPE_CHECKING
 import requests
 
 if TYPE_CHECKING:
-    from reality_engine.config import Config
+    from daily_intel.config import Config
 
-logger = logging.getLogger("reality_engine")
+logger = logging.getLogger("daily_intel")
 
 
 def deliver(config: Config, brief: dict) -> dict[str, bool]:
@@ -54,7 +54,7 @@ def _send_gmail(config: Config, brief: dict) -> bool:
 
     headline = brief.get("metadata", {}).get("editorial_headline", "Intelligence Brief")
     signal_count = brief.get("metadata", {}).get("signal_count", 0)
-    subject = f"Reality Engine: {headline} ({signal_count} signals)"
+    subject = f"Daily Intel: {headline} ({signal_count} signals)"
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject

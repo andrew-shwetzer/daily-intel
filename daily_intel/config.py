@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import yaml
 
 
-DEFAULT_CONFIG_DIR = Path.home() / ".reality-engine"
+DEFAULT_CONFIG_DIR = Path.home() / ".daily-intel"
 
 
 @dataclass

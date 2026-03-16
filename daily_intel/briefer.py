@@ -12,9 +12,9 @@ from anthropic import Anthropic
 from jinja2 import Environment, FileSystemLoader
 
 if TYPE_CHECKING:
-    from reality_engine.config import Config
+    from daily_intel.config import Config
 
-logger = logging.getLogger("reality_engine")
+logger = logging.getLogger("daily_intel")
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
@@ -27,7 +27,7 @@ def generate_brief(
     """Generate a daily intelligence brief.
 
     Args:
-        config: Reality Engine configuration.
+        config: Daily Intel configuration.
         signals: Pre-scored signals (magic moment mode). If None, queries DB.
         use_db: If True, query and update database.
 
@@ -35,7 +35,7 @@ def generate_brief(
         Dict with keys: html, markdown, slack_blocks, metadata
     """
     if signals is None and use_db:
-        from reality_engine.db import get_undelivered_signals
+        from daily_intel.db import get_undelivered_signals
         signals = get_undelivered_signals(config, hours=24)
 
     if not signals:
@@ -84,7 +84,7 @@ def generate_brief(
 
     # Store brief in DB
     if use_db:
-        from reality_engine.db import insert_brief, mark_delivered
+        from daily_intel.db import insert_brief, mark_delivered
         insert_brief(config, {
             "brief_date": today,
             "signal_count": len(signals),
@@ -311,7 +311,7 @@ def _build_slack_blocks(context: dict) -> dict:
 
     blocks.append({
         "type": "context",
-        "elements": [{"type": "mrkdwn", "text": f"Reality Engine | {context['niche']}"}],
+        "elements": [{"type": "mrkdwn", "text": f"Daily Intel | {context['niche']}"}],
     })
 
     return {"blocks": blocks}

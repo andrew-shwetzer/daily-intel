@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="reality-engine",
+    name="daily-intel",
     version="0.1.0",
     description="AI-powered industry intelligence monitoring system",
     author="Andrew Shwetzer",
-    url="https://github.com/andrew-shwetzer/reality-engine",
+    url="https://github.com/andrew-shwetzer/daily-intel",
     packages=find_packages(),
     include_package_data=True,
-    package_data={"reality_engine": ["templates/*.html", "templates/*.json"]},
+    package_data={"daily_intel": ["templates/*.html", "templates/*.json"]},
     install_requires=[
         "anthropic>=0.40.0",
         "supabase>=2.0.0",
@@ -20,7 +20,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "reality-engine=reality_engine.cli:cli",
+            "daily-intel=daily_intel.cli:cli",
         ],
     },
     python_requires=">=3.10",

@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from reality_engine.config import Config
+    from daily_intel.config import Config
 
-logger = logging.getLogger("reality_engine")
+logger = logging.getLogger("daily_intel")
 
 _client = None
 

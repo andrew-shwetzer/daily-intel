@@ -1,4 +1,4 @@
-# Reality Engine
+# Daily Intel
 
 An AI-powered intelligence newsletter that monitors your niche and delivers a daily editorial brief to your inbox.
 
@@ -31,17 +31,17 @@ If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), the se
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/andrew-shwetzer/reality-engine.git
-cd reality-engine
+git clone https://github.com/andrew-shwetzer/daily-intel.git
+cd daily-intel
 
 # 2. Install the package
 pip install -e .
 
 # 3. Copy the skill to Claude Code
-cp -r skill/SKILL.md ~/.claude/skills/reality-engine/SKILL.md
+cp -r skill/SKILL.md ~/.claude/skills/daily-intel/SKILL.md
 
 # 4. Run the skill
-# In Claude Code, type: /reality-engine
+# In Claude Code, type: /daily-intel
 ```
 
 The skill asks 5 questions, researches your niche, provisions your database, and sets up cron. You'll see a live preview of your brief before anything is deployed.
@@ -51,8 +51,8 @@ The skill asks 5 questions, researches your niche, provisions your database, and
 ### 1. Install
 
 ```bash
-git clone https://github.com/andrew-shwetzer/reality-engine.git
-cd reality-engine
+git clone https://github.com/andrew-shwetzer/daily-intel.git
+cd daily-intel
 pip install -e .
 ```
 
@@ -77,10 +77,10 @@ Apply the schema to your Supabase project:
 ### 4. Create Config
 
 ```bash
-mkdir -p ~/.reality-engine/instances/my-niche
+mkdir -p ~/.daily-intel/instances/my-niche
 ```
 
-Create `~/.reality-engine/instances/my-niche/config.yaml`:
+Create `~/.daily-intel/instances/my-niche/config.yaml`:
 
 ```yaml
 niche: "Your Industry"
@@ -133,13 +133,13 @@ database:
 
 ```bash
 # Preview a brief without storing anything
-reality-engine -i my-niche preview
+daily-intel -i my-niche preview
 
 # Run a full cycle (collect + brief)
-reality-engine -i my-niche run
+daily-intel -i my-niche run
 
 # Check health
-reality-engine -i my-niche health
+daily-intel -i my-niche health
 ```
 
 ### 6. Set Up Cron
@@ -151,22 +151,22 @@ crontab -e
 Add:
 ```
 # Collect signals every 4 hours
-0 */4 * * * cd /path/to/reality-engine && reality-engine -i my-niche collect >> ~/.reality-engine/logs/my-niche.log 2>&1
+0 */4 * * * cd /path/to/daily-intel && daily-intel -i my-niche collect >> ~/.daily-intel/logs/my-niche.log 2>&1
 
 # Generate and deliver brief at 6 AM
-0 6 * * * cd /path/to/reality-engine && reality-engine -i my-niche brief >> ~/.reality-engine/logs/my-niche.log 2>&1
+0 6 * * * cd /path/to/daily-intel && daily-intel -i my-niche brief >> ~/.daily-intel/logs/my-niche.log 2>&1
 ```
 
 ## Commands
 
 | Command | What it does |
 |---------|-------------|
-| `reality-engine -i <slug> collect` | Fetch RSS feeds, score with Claude, store in Supabase |
-| `reality-engine -i <slug> brief` | Generate editorial brief, deliver via Gmail/Slack |
-| `reality-engine -i <slug> run` | Collect + brief (full daily cycle) |
-| `reality-engine -i <slug> preview` | Generate a brief without storing anything |
-| `reality-engine -i <slug> health` | Check system status |
-| `reality-engine list-instances` | List all configured instances |
+| `daily-intel -i <slug> collect` | Fetch RSS feeds, score with Claude, store in Supabase |
+| `daily-intel -i <slug> brief` | Generate editorial brief, deliver via Gmail/Slack |
+| `daily-intel -i <slug> run` | Collect + brief (full daily cycle) |
+| `daily-intel -i <slug> preview` | Generate a brief without storing anything |
+| `daily-intel -i <slug> health` | Check system status |
+| `daily-intel list-instances` | List all configured instances |
 
 ## Signal Scoring
 
@@ -193,7 +193,7 @@ The daily brief uses a dark HUD aesthetic with:
 - Content ideas derived from signals
 - Data points for future content
 
-Customize the template in `reality_engine/templates/brief.html`.
+Customize the template in `daily_intel/templates/brief.html`.
 
 ## Gmail App Password Setup
 

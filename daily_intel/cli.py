@@ -1,4 +1,4 @@
-"""CLI interface for Reality Engine."""
+"""CLI interface for Daily Intel."""
 
 import logging
 import sys
@@ -6,14 +6,14 @@ from pathlib import Path
 
 import click
 
-from reality_engine.config import Config, DEFAULT_CONFIG_DIR
+from daily_intel.config import Config, DEFAULT_CONFIG_DIR
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
 )
-logger = logging.getLogger("reality_engine")
+logger = logging.getLogger("daily_intel")
 
 
 def _find_config(instance: str | None = None) -> Path:
@@ -24,12 +24,12 @@ def _find_config(instance: str | None = None) -> Path:
         # Look for single instance
         instances_dir = DEFAULT_CONFIG_DIR / "instances"
         if not instances_dir.exists():
-            click.echo("No instances found. Run the /reality-engine skill in Claude Code to set up.")
+            click.echo("No instances found. Run the /daily-intel skill in Claude Code to set up.")
             sys.exit(1)
 
         instances = [d for d in instances_dir.iterdir() if d.is_dir()]
         if len(instances) == 0:
-            click.echo("No instances found. Run the /reality-engine skill in Claude Code to set up.")
+            click.echo("No instances found. Run the /daily-intel skill in Claude Code to set up.")
             sys.exit(1)
         elif len(instances) == 1:
             config_path = instances[0] / "config.yaml"
@@ -51,9 +51,9 @@ def _find_config(instance: str | None = None) -> Path:
 @click.option("--verbose", "-v", is_flag=True, help="Verbose logging")
 @click.pass_context
 def cli(ctx, instance, verbose):
-    """Reality Engine - AI-powered industry intelligence monitoring."""
+    """Daily Intel - AI-powered industry intelligence monitoring."""
     if verbose:
-        logging.getLogger("reality_engine").setLevel(logging.DEBUG)
+        logging.getLogger("daily_intel").setLevel(logging.DEBUG)
     ctx.ensure_object(dict)
     ctx.obj["instance"] = instance
 
@@ -69,7 +69,7 @@ def collect(ctx):
             click.echo(f"Config error: {e}")
         sys.exit(1)
 
-    from reality_engine.collector import collect_all
+    from daily_intel.collector import collect_all
 
     signals = collect_all(config, use_db=True)
     click.echo(f"Collected {len(signals)} signals above threshold")
@@ -86,8 +86,8 @@ def brief(ctx):
             click.echo(f"Config error: {e}")
         sys.exit(1)
 
-    from reality_engine.briefer import generate_brief
-    from reality_engine.delivery import deliver
+    from daily_intel.briefer import generate_brief
+    from daily_intel.delivery import deliver
 
     brief_data = generate_brief(config, use_db=True)
 
@@ -136,7 +136,7 @@ def health(ctx):
     # Check DB if configured
     if config.database.supabase_url:
         try:
-            from reality_engine.db import get_signal_count_today, get_source_stats
+            from daily_intel.db import get_signal_count_today, get_source_stats
 
             count = get_signal_count_today(config)
             stats = get_source_stats(config)
@@ -170,8 +170,8 @@ def preview(ctx):
     click.echo(f"Sources: {len(config.sources)}")
     click.echo("")
 
-    from reality_engine.collector import collect_all
-    from reality_engine.briefer import generate_brief
+    from daily_intel.collector import collect_all
+    from daily_intel.briefer import generate_brief
 
     signals = collect_all(config, use_db=False)
 

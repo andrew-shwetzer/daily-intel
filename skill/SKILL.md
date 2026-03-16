@@ -1,5 +1,5 @@
 ---
-name: reality-engine
+name: daily-intel
 description: |
   Build your own AI-powered intelligence newsletter. Monitors any niche via RSS, scores signals
   with Claude, and delivers a daily editorial brief to your inbox or Slack. Full auto-setup:
@@ -10,7 +10,7 @@ model: claude-opus-4-6
 user_invocable: true
 ---
 
-# /reality-engine -- Your Personal Intelligence Newsletter
+# /daily-intel -- Your Personal Intelligence Newsletter
 
 You build a custom AI-powered intelligence newsletter for any niche in one session. 5 questions, then everything is auto-provisioned: database, sources, config, cron schedule. The user sees a live sample brief before committing.
 
@@ -23,7 +23,7 @@ You build a custom AI-powered intelligence newsletter for any niche in one sessi
 ## Architecture
 
 ```
-~/.reality-engine/
+~/.daily-intel/
   instances/
     <slug>/
       config.yaml          <- full configuration (generated)
@@ -31,12 +31,12 @@ You build a custom AI-powered intelligence newsletter for any niche in one sessi
         YYYY-MM-DD.md
 ```
 
-The Python package `reality_engine` runs on the user's machine via cron:
-- `reality-engine collect` - fetch RSS, score with Claude, store in Supabase
-- `reality-engine brief` - generate editorial brief, deliver via Gmail/Slack
-- `reality-engine run` - collect + brief (full daily cycle)
-- `reality-engine health` - check system status
-- `reality-engine preview` - generate a brief without storing anything
+The Python package `daily_intel` runs on the user's machine via cron:
+- `daily-intel collect` - fetch RSS, score with Claude, store in Supabase
+- `daily-intel brief` - generate editorial brief, deliver via Gmail/Slack
+- `daily-intel run` - collect + brief (full daily cycle)
+- `daily-intel health` - check system status
+- `daily-intel preview` - generate a brief without storing anything
 
 ## Command Routing
 
@@ -58,13 +58,13 @@ else:
 
 ## ONBOARDING FLOW (5 Questions)
 
-When the user runs `/reality-engine` or `/reality-engine new`, run this conversational flow. Be warm, direct, and helpful. Suggest smart defaults.
+When the user runs `/daily-intel` or `/daily-intel new`, run this conversational flow. Be warm, direct, and helpful. Suggest smart defaults.
 
 ### Prerequisites Check
 
 Before starting, verify:
 1. `ANTHROPIC_API_KEY` is set. If not: "You'll need an Anthropic API key. Get one at console.anthropic.com, then set it: `export ANTHROPIC_API_KEY=sk-...`"
-2. The `reality-engine` Python package is installed. Check with: `python -m reality_engine --help`. If not installed: "Let's install the package first: `pip install -e /path/to/reality-engine`"
+2. The `daily-intel` Python package is installed. Check with: `python -m daily_intel --help`. If not installed: "Let's install the package first: `pip install -e /path/to/daily-intel`"
 
 ### Question 1: Your Niche
 "What niche or industry do you want to monitor? Be specific."
@@ -169,7 +169,7 @@ Use the Supabase MCP tools:
    a. `get_cost` with type "project"
    b. Show cost to user, ask for confirmation
    c. `confirm_cost` to get confirmation ID
-   d. `create_project` with name "reality-engine-{slug}", region closest to user
+   d. `create_project` with name "daily-intel-{slug}", region closest to user
    e. Poll `get_project` until status is active (may take 2-3 minutes)
 4. `get_project_url` - get the API URL
 5. `get_publishable_keys` - get the anon key
@@ -184,7 +184,7 @@ Also have them set: `export SUPABASE_URL=https://xxx.supabase.co`
 
 ### Step 5: Generate Config
 
-Generate `~/.reality-engine/instances/{slug}/config.yaml` with all discovered sources, competitors, delivery settings, and scoring config baked in.
+Generate `~/.daily-intel/instances/{slug}/config.yaml` with all discovered sources, competitors, delivery settings, and scoring config baked in.
 
 ### Step 6: Gmail App Password Setup (if Gmail delivery)
 
@@ -198,12 +198,12 @@ Walk the user through:
 
 Generate the crontab entries:
 ```
-# Reality Engine - {niche}
+# Daily Intel - {niche}
 # Collect signals every {interval} hours
-0 */{interval} * * * cd /path/to/reality-engine && python -m reality_engine -i {slug} collect >> ~/.reality-engine/logs/{slug}.log 2>&1
+0 */{interval} * * * cd /path/to/daily-intel && python -m daily_intel -i {slug} collect >> ~/.daily-intel/logs/{slug}.log 2>&1
 
 # Generate and deliver daily brief at {time}
-{minute} {hour} * * * cd /path/to/reality-engine && python -m reality_engine -i {slug} brief >> ~/.reality-engine/logs/{slug}.log 2>&1
+{minute} {hour} * * * cd /path/to/daily-intel && python -m daily_intel -i {slug} brief >> ~/.daily-intel/logs/{slug}.log 2>&1
 ```
 
 Show the user and ask: "Want me to add these to your crontab?"
@@ -213,7 +213,7 @@ If yes, add them. If no, show them how to do it manually.
 ### Step 8: Confirmation
 
 ```
-Your Reality Engine is live!
+Your Daily Intel is live!
 
 Niche: {niche}
 Sources: {N} validated feeds
@@ -230,13 +230,13 @@ Next steps:
    {export GMAIL_APP_PASSWORD=... if gmail}
 
 2. Test a full cycle:
-   python -m reality_engine -i {slug} run
+   python -m daily_intel -i {slug} run
 
 3. Your first real brief arrives tomorrow at {time}!
 
-To check health: python -m reality_engine -i {slug} health
-To preview a brief: python -m reality_engine -i {slug} preview
-To adjust settings: /reality-engine {slug} tune
+To check health: python -m daily_intel -i {slug} health
+To preview a brief: python -m daily_intel -i {slug} preview
+To adjust settings: /daily-intel {slug} tune
 ```
 
 ---
@@ -278,7 +278,7 @@ Read config and display:
 
 ## Critical Constraints
 
-- All instance data stored in ~/.reality-engine/instances/<slug>/
+- All instance data stored in ~/.daily-intel/instances/<slug>/
 - Python package must be installed locally
 - User owns all infrastructure (Supabase project, API keys, cron)
 - Never store API keys in config files. Always use environment variables.

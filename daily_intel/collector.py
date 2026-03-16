@@ -11,16 +11,16 @@ import feedparser
 from anthropic import Anthropic
 
 if TYPE_CHECKING:
-    from reality_engine.config import Config, Source
+    from daily_intel.config import Config, Source
 
-logger = logging.getLogger("reality_engine")
+logger = logging.getLogger("daily_intel")
 
 
 def collect_all(config: Config, use_db: bool = True) -> list[dict]:
     """Collect signals from all configured sources.
 
     Args:
-        config: Reality Engine configuration.
+        config: Daily Intel configuration.
         use_db: If True, dedup against DB and store results.
                 If False, return scored signals in memory (magic moment mode).
 
@@ -39,7 +39,7 @@ def collect_all(config: Config, use_db: bool = True) -> list[dict]:
 
         # Dedup against DB if using database
         if use_db:
-            from reality_engine.db import signal_exists
+            from daily_intel.db import signal_exists
             raw_entries = [e for e in raw_entries if not signal_exists(config, e["url"])]
 
         if not raw_entries:
@@ -52,7 +52,7 @@ def collect_all(config: Config, use_db: bool = True) -> list[dict]:
             for signal in scored:
                 if signal["relevance_score"] >= config.scoring.min_relevance:
                     if use_db:
-                        from reality_engine.db import insert_signal
+                        from daily_intel.db import insert_signal
                         insert_signal(config, signal)
                     all_signals.append(signal)
 

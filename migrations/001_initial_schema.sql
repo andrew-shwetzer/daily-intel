@@ -1,4 +1,4 @@
--- Reality Engine — Supabase Schema
+-- Daily Intel — Supabase Schema
 -- Migration 001: Initial schema
 --
 -- Creates tables for signal collection, competitor tracking,
