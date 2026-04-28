@@ -1,9 +1,8 @@
 # Daily Intel
 
-An AI-powered intelligence pipeline that monitors your niche, scores every signal with Claude, and delivers a daily brief.
+A Claude Code skill that builds you a personal intelligence pipeline. Tell it your industry, your competitors, and where to deliver. It monitors RSS, news, Reddit, and competitor blogs, scores every signal with Claude, and ships a daily editorial brief to Gmail, Slack, or Beehiiv.
 
-Tell it your industry, your competitors, and where you want the brief. It finds the sources and synthesizes a daily editorial, delivered to Gmail, Slack, or Beehiiv.
-
+Two modes: a tight personal brief for your own decision-making, or an audience newsletter delivered as a Beehiiv draft.
 ## Two Modes
 
 **Personal mode** — an intelligence brief for your own decision-making. Tight, dense, action-oriented. Delivered to your Gmail inbox or Slack channel.
